@@ -8,6 +8,7 @@ import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber';
 import { Matrix4, Quaternion, Vector3 } from 'three';
 import { updatePlaneAxis } from './controls';
+import { cameraRotationOffset } from './CameraDragControls';
 
 const x = new Vector3(1, 0, 0);
 const y = new Vector3(0, 1, 0);
@@ -56,13 +57,79 @@ export function Airplane(props) {
     delayedRotMatrix.identity();
     delayedRotMatrix.makeRotationFromQuaternion(delayedQuaternion);
 
-    const cameraMatrix = new Matrix4()
-      .multiply(new Matrix4().makeTranslation(planePosition.x, planePosition.y, planePosition.z))
-      .multiply(delayedRotMatrix)
-      .multiply(new Matrix4().makeRotationX(-0.2))
-      .multiply(
-        new Matrix4().makeTranslation(0, 0.015, 0.3)
-      );
+    // Base camera offset relative to airplane (behind and slightly above)
+    // This is the default position when no drag rotation is applied
+    const baseCameraOffset = new Vector3(0, 0.015, 0.3);
+    
+    // Apply the airplane's rotation to the base offset
+    // This makes the camera follow behind the airplane
+    const rotatedOffset = baseCameraOffset.clone();
+    rotatedOffset.applyMatrix4(delayedRotMatrix);
+    
+    // Apply additional rotation for the slight downward angle
+    const downAngle = new Matrix4().makeRotationX(-0.2);
+    rotatedOffset.applyMatrix4(downAngle);
+    
+    // Now apply drag rotation offsets to orbit around the airplane
+    // Start with the rotated offset
+    let finalOffset = rotatedOffset.clone();
+    
+    if (cameraRotationOffset.yaw !== 0 || cameraRotationOffset.pitch !== 0) {
+      // Get the airplane's up vector (world Y or airplane's Y)
+      const planeUp = new Vector3(0, 1, 0);
+      planeUp.applyMatrix4(delayedRotMatrix);
+      planeUp.normalize();
+      
+      // Get the airplane's forward vector (negative Z in airplane space)
+      const planeForward = new Vector3(0, 0, -1);
+      planeForward.applyMatrix4(delayedRotMatrix);
+      planeForward.normalize();
+      
+      // Get the airplane's right vector
+      const planeRight = new Vector3(1, 0, 0);
+      planeRight.applyMatrix4(delayedRotMatrix);
+      planeRight.normalize();
+      
+      // Apply yaw rotation around the airplane's up vector
+      const yawQuaternion = new Quaternion().setFromAxisAngle(planeUp, cameraRotationOffset.yaw);
+      finalOffset.applyQuaternion(yawQuaternion);
+      
+      // Apply pitch rotation around the airplane's right vector
+      const pitchQuaternion = new Quaternion().setFromAxisAngle(planeRight, cameraRotationOffset.pitch);
+      finalOffset.applyQuaternion(pitchQuaternion);
+    }
+    
+    // Calculate final camera position: airplane position + offset
+    const cameraPosition = planePosition.clone().add(finalOffset);
+    
+    // Calculate look-at target: slightly forward from airplane position along its forward direction
+    // This keeps the airplane centered in view
+    const lookAtOffset = new Vector3(0, 0, -0.15); // Slightly forward along airplane's forward
+    lookAtOffset.applyMatrix4(delayedRotMatrix);
+    const lookAtTarget = planePosition.clone().add(lookAtOffset);
+    
+    // Calculate the forward direction (from camera to target)
+    const forward = lookAtTarget.clone().sub(cameraPosition).normalize();
+    
+    // Calculate right vector (cross product of forward and world up)
+    const worldUp = new Vector3(0, 1, 0);
+    let right = new Vector3().crossVectors(forward, worldUp).normalize();
+    
+    // Handle edge case where forward is parallel to world up
+    if (right.length() < 0.01) {
+      right = new Vector3(1, 0, 0);
+    }
+    
+    // Calculate the actual up vector (perpendicular to both forward and right)
+    const up = new Vector3().crossVectors(right, forward).normalize();
+    
+    // Build camera matrix: position + orientation (right, up, -forward)
+    // Note: camera looks down -Z, so we use -forward
+    const cameraMatrix = new Matrix4();
+    cameraMatrix.makeBasis(right, up, forward.clone().negate());
+    
+    // Set the position (makeBasis only sets orientation, position defaults to 0,0,0)
+    cameraMatrix.setPosition(cameraPosition);
 
     camera.matrixAutoUpdate = false;
     camera.matrix.copy(cameraMatrix);
