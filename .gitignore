@@ -24,3 +24,6 @@ src-0beqz/
 *.njsproj
 *.sln
 *.sw?
+
+# Large texture files (stored locally, will be uploaded to CDN)
+public/assets/textures/terrain-texture.png
