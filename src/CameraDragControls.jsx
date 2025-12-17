@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Matrix4, Vector3 } from 'three';
+import { isMenuOpen } from './controls';
 
 // Store camera rotation offsets globally so they persist across frames
 // This will be imported by Airplane component to apply the offsets
@@ -16,6 +17,9 @@ export function CameraDragControls() {
 
   useEffect(() => {
     const handleMouseDown = (e) => {
+      // Don't allow dragging when menu is open
+      if (isMenuOpen) return;
+      
       // Only start dragging on left mouse button
       if (e.button === 0) {
         isDragging = true;
@@ -29,6 +33,13 @@ export function CameraDragControls() {
 
     const handleMouseMove = (e) => {
       if (!isDragging) return;
+      
+      // Don't allow dragging when menu is open
+      if (isMenuOpen) {
+        isDragging = false;
+        document.body.style.cursor = '';
+        return;
+      }
 
       const deltaX = e.clientX - lastMouseX;
       const deltaY = e.clientY - lastMouseY;

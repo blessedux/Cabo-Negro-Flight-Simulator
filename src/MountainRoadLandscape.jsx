@@ -114,13 +114,13 @@ export function MountainRoadLandscape({ textureRotation = 0, ...props }) {
     const heightmapCoverageMeters = 80000; // 80 km
     const heightmapMetersPerPixel = heightmapCoverageMeters / canvas.width; // ~78.125 m/pixel
     
-    // Texture center: -52.871° S, -70.862° W
-    // Heightmap center: -53.061° S, -70.878° W
+    // Texture center: -52.871294° S, -70.861816° W (from documentation)
+    // Heightmap center: -53.061222° S, -70.878388° W (from documentation)
     // Calculate offset from heightmap center to texture center
-    const textureCenterLat = -52.871;
-    const textureCenterLng = -70.862;
-    const heightmapCenterLat = -53.061;
-    const heightmapCenterLng = -70.878;
+    const textureCenterLat = -52.871294;
+    const textureCenterLng = -70.861816;
+    const heightmapCenterLat = -53.061222;
+    const heightmapCenterLng = -70.878388;
     
     // Convert lat/lng difference to meters (at latitude -53°)
     const metersPerDegreeLat = 111320; // Constant
@@ -227,9 +227,16 @@ export function MountainRoadLandscape({ textureRotation = 0, ...props }) {
           let u = uvs.array[uvIndex];
           let v = uvs.array[uvIndex + 1];
           
+          // Flip U coordinate horizontally to swap east/west
+          u = 1 - u;
+          
           // Clamp UV coordinates
           u = Math.max(0, Math.min(1, u));
           v = Math.max(0, Math.min(1, v));
+          
+          // Update the UV array with flipped coordinates
+          uvs.array[uvIndex] = u;
+          uvs.array[uvIndex + 1] = v;
           
           // Map UV coordinates to the texture region in the heightmap
           // The texture covers a small region centered at (finalTextureCenterX, finalTextureCenterY)
@@ -286,6 +293,7 @@ export function MountainRoadLandscape({ textureRotation = 0, ...props }) {
         
         // Update geometry
         positions.needsUpdate = true;
+        uvs.needsUpdate = true; // Mark UVs as updated after flipping
         geometry.computeVertexNormals();
         geometry.computeBoundingBox();
         geometry.computeBoundingSphere();

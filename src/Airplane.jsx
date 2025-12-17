@@ -7,13 +7,17 @@ import React, { useRef } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber';
 import { Matrix4, Quaternion, Vector3 } from 'three';
-import { updatePlaneAxis } from './controls';
+import { updatePlaneAxis, isMenuOpen } from './controls';
 import { cameraRotationOffset } from './CameraDragControls';
 
 const x = new Vector3(1, 0, 0);
 const y = new Vector3(0, 1, 0);
 const z = new Vector3(0, 0, 1);
-export const planePosition = new Vector3(0, 3, 7);
+// Terrain size: 3455m * 0.01 scale = 34.55 units
+// North border is at +terrainSize/2 (north is positive Z in this coordinate system)
+const terrainSize = 34.55;
+const northBorderZ = terrainSize / 2; // +17.275
+export const planePosition = new Vector3(0, 3, northBorderZ);
 
 const delayedRotMatrix = new Matrix4();
 const delayedQuaternion = new Quaternion();
@@ -135,7 +139,10 @@ export function Airplane(props) {
     camera.matrix.copy(cameraMatrix);
     camera.matrixWorldNeedsUpdate = true;
 
-    helixMeshRef.current.rotation.z -= 1.0;
+    // Only rotate helix when menu is not open
+    if (!isMenuOpen && helixMeshRef.current) {
+      helixMeshRef.current.rotation.z -= 1.0;
+    }
   });
 
   return (

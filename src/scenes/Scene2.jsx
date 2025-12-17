@@ -2,17 +2,22 @@ import React from "react";
 import { PerspectiveCamera, Environment } from "@react-three/drei";
 import { EffectComposer, HueSaturation } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
+import { MountainRoadLandscape } from "../MountainRoadLandscape";
 import { SphereEnv } from "../SphereEnv";
+import { Airplane } from "../Airplane";
+import { CameraDragControls } from "../CameraDragControls";
 
 export function Scene2({ textureRotation = 0 }) {
   return (
     <>
+      <CameraDragControls />
       <SphereEnv />
       <Environment background={false} files={"assets/textures/envmap.hdr"} />
 
       <PerspectiveCamera makeDefault position={[0, 8, 8]} fov={60} />
 
-      {/* Scene 2 content will be added here */}
+      <MountainRoadLandscape textureRotation={textureRotation} />
+      <Airplane />
 
       <directionalLight
         castShadow

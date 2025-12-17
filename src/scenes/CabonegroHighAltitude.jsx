@@ -8,9 +8,24 @@ import { Airplane } from "../Airplane";
 import { Targets } from "../Targets";
 import { MotionBlur } from "../MotionBlur";
 import { CameraDragControls } from "../CameraDragControls";
+import { LocationBeam } from "../LocationBeam";
+import { Compass } from "../Compass";
+import { CollisionDetector } from "../CollisionDetector";
+import { useTexture } from "@react-three/drei";
+import { useEffect } from "react";
+import { initializeHeightmap } from "../terrainHeightSampler";
 
 export function CabonegroHighAltitude({ textureRotation = 0 }) {
   // textureRotation prop kept for compatibility but defaults to 0
+  const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
+  
+  // Initialize terrain height sampler
+  useEffect(() => {
+    if (heightmapTexture && heightmapTexture.image) {
+      initializeHeightmap(heightmapTexture.image);
+    }
+  }, [heightmapTexture]);
+  
   return (
     <>
       <CameraDragControls />
@@ -22,6 +37,9 @@ export function CabonegroHighAltitude({ textureRotation = 0 }) {
       <MountainRoadLandscape textureRotation={textureRotation} />
       <Airplane />
       <Targets />
+      <LocationBeam />
+      <Compass />
+      <CollisionDetector />
 
       <directionalLight
         castShadow
