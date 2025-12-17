@@ -9,7 +9,7 @@ const controlsList = [
   { key: 'Space', description: 'Pause (camera still movable)' },
   { key: 'Escape', description: 'Open/Close menu' },
   { key: 'Mouse Drag', description: 'Rotate camera around plane' },
-  { key: 'O / I', description: 'Next scene / Previous scene' },
+  { key: 'N / B', description: 'Next scene / Previous scene' },
 ];
 
 export function PauseMenu() {

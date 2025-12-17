@@ -5,9 +5,14 @@ import { Canvas } from "@react-three/fiber";
 import { CompassOverlay } from "./CompassOverlay";
 import { PauseMenu } from "./PauseMenu";
 import { AltitudeSpeedUI } from "./AltitudeSpeedUI";
+import { SceneToggleButton } from "./SceneToggleButton";
+import { CameraPositionLoggerUI } from "./CameraPositionLoggerUI";
+import { RingCounter } from "./RingCounter";
 import { subscribeToMenuOpen, isMenuOpen } from "./controls";
 import { setBeamHitCallback, setGroundHitCallback, setAltitudeZeroCallback, resetCollisionFlags } from "./CollisionDetector";
+import { resetRingCount } from "./RingCounter";
 import { planePosition } from "./Airplane";
+import * as THREE from "three";
 import "./index.css";
 
 function Root() {
@@ -42,6 +47,9 @@ function Root() {
       // Reset collision flags
       resetCollisionFlags();
       
+      // Reset ring counter
+      resetRingCount();
+      
       // Force scene restart by changing key
       sceneKey.current += 1;
       setCurrentScene(1);
@@ -65,11 +73,11 @@ function Root() {
       
       const key = e.key.toLowerCase();
       
-      if (key === 'o') {
+      if (key === 'n') {
         e.preventDefault();
         // Next scene (wrap around)
         setCurrentScene((prev) => (prev >= totalScenes ? 1 : prev + 1));
-      } else if (key === 'i') {
+      } else if (key === 'b') {
         e.preventDefault();
         // Previous scene (wrap around)
         setCurrentScene((prev) => (prev <= 1 ? totalScenes : prev - 1));
@@ -84,32 +92,35 @@ function Root() {
 
   const currentSceneName = SCENE_NAMES[currentScene] || 'Unknown';
 
+  const handleNextScene = () => {
+    setCurrentScene((prev) => (prev >= totalScenes ? 1 : prev + 1));
+  };
+
+  const handlePreviousScene = () => {
+    setCurrentScene((prev) => (prev <= 1 ? totalScenes : prev - 1));
+  };
+
   return (
     <>
-      <div 
-        style={{ 
-          position: "fixed", 
-          bottom: 20, 
-          right: 20, 
-          zIndex: 1000, 
-          background: "rgba(0,0,0,0.7)", 
-          padding: "12px 20px", 
-          borderRadius: "8px", 
-          color: "white",
-          fontFamily: "system-ui, -apple-system, sans-serif",
-          fontSize: "16px",
-          fontWeight: "500",
-          backdropFilter: "blur(10px)",
-          border: "1px solid rgba(255, 255, 255, 0.1)",
-          boxShadow: "0 4px 15px rgba(0, 0, 0, 0.3)",
-        }}
-      >
-        Scene {currentScene}: {currentSceneName}
-      </div>
+      <SceneToggleButton
+        currentScene={currentScene}
+        totalScenes={totalScenes}
+        onNext={handleNextScene}
+        onPrevious={handlePreviousScene}
+      />
       {currentScene === 1 && <CompassOverlay />}
       {currentScene === 1 && <AltitudeSpeedUI />}
+      {currentScene === 1 && <RingCounter />}
+      {currentScene === 2 && <CameraPositionLoggerUI />}
       {menuOpen && <PauseMenu />}
-      <Canvas shadows>
+      <Canvas 
+        shadows
+        gl={{
+          outputColorSpace: THREE.SRGBColorSpace,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.0,
+        }}
+      >
         <Suspense fallback={null}>
           <App key={sceneKey.current} sceneNumber={currentScene} />
         </Suspense>

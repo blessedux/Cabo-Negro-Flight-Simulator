@@ -4,10 +4,8 @@ import { EffectComposer, HueSaturation } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
 import { MountainRoadLandscape } from "../MountainRoadLandscape";
 import { SphereEnv } from "../SphereEnv";
-import { Airplane } from "../Airplane";
-import { Targets } from "../Targets";
 import { MotionBlur } from "../MotionBlur";
-import { CameraDragControls } from "../CameraDragControls";
+import { FreeCameraDragControls } from "../FreeCameraDragControls";
 import { LocationBeam } from "../LocationBeam";
 import { Compass } from "../Compass";
 import { CollisionDetector } from "../CollisionDetector";
@@ -15,7 +13,7 @@ import { useTexture } from "@react-three/drei";
 import { useEffect } from "react";
 import { initializeHeightmap } from "../terrainHeightSampler";
 
-export function CabonegroHighAltitude({ textureRotation = 0 }) {
+export function Scene2({ textureRotation = 0 }) {
   // textureRotation prop kept for compatibility but defaults to 0
   const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
   
@@ -28,20 +26,16 @@ export function CabonegroHighAltitude({ textureRotation = 0 }) {
   
   return (
     <>
-      <CameraDragControls />
+      <FreeCameraDragControls />
       <SphereEnv />
       <Environment background={false} files={"assets/textures/envmap.hdr"} />
 
       <PerspectiveCamera makeDefault position={[0, 8, 8]} fov={60} />
 
       <MountainRoadLandscape textureRotation={textureRotation} />
-      <Airplane />
-      <Targets />
       <LocationBeam />
       <Compass />
       <CollisionDetector />
-
-      <ambientLight intensity={0.6} color="#ffffff" />
 
       <directionalLight
         castShadow

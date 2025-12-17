@@ -91,7 +91,7 @@ export function AltitudeSpeedUI() {
         left: 100, // Position to the right of the compass (10px + 80px + 10px gap)
         zIndex: 1000,
         background: 'rgba(0, 0, 0, 0.8)',
-        padding: '8px 12px',
+        padding: '10px 14px',
         borderRadius: '10px',
         color: '#fff',
         fontFamily: 'monospace',
@@ -103,14 +103,23 @@ export function AltitudeSpeedUI() {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        minWidth: '180px',
+        minWidth: '200px',
+        maxWidth: '200px', // Fixed width to prevent breaking
+        boxSizing: 'border-box',
       }}
     >
       {/* Altitude Display */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ flex: 1 }}>
+      <div style={{ 
+        flex: '1 1 50%', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        minHeight: 0, // Prevent overflow
+        overflow: 'hidden',
+      }}>
+        <div style={{ flex: '1 1 auto', minWidth: 0 }}>
           <div style={{ fontSize: '9px', color: '#aaa', marginBottom: '2px' }}>ALTITUDE</div>
-          <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#00ffff', lineHeight: '1.2' }}>
+          <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#00ffff', lineHeight: '1.2', whiteSpace: 'nowrap' }}>
             {altitudeMeters.toFixed(0)}<span style={{ fontSize: '10px', color: '#aaa' }}>m</span>
           </div>
         </div>
@@ -119,14 +128,16 @@ export function AltitudeSpeedUI() {
         <div style={{ 
           position: 'relative',
           width: '20px',
-          height: '64px', // Fits within 80px height with padding
+          height: '30px', // Smaller to fit better
           background: 'rgba(255, 255, 255, 0.1)',
           border: '1px solid rgba(255, 255, 255, 0.3)',
           borderRadius: '3px',
           marginLeft: '8px',
+          flexShrink: 0,
+          overflow: 'visible', // Allow marks to show at top
         }}>
           {rulerMarks.filter((_, i) => i % 4 === 0).map((mark, i) => {
-            const markPosition = (mark / maxRulerHeight) * 64;
+            const markPosition = (mark / maxRulerHeight) * 30;
             const isActive = altitude >= mark && altitude < mark + 1;
             
             return (
@@ -149,7 +160,7 @@ export function AltitudeSpeedUI() {
           <div
             style={{
               position: 'absolute',
-              bottom: `${Math.min((altitude / maxRulerHeight) * 64, 64)}px`,
+              bottom: `${Math.min((altitude / maxRulerHeight) * 30, 30)}px`,
               left: '-3px',
               width: '26px',
               height: '2px',
@@ -161,14 +172,21 @@ export function AltitudeSpeedUI() {
       </div>
 
       {/* Speed Display */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
+      <div style={{ 
+        flex: '1 1 50%', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between',
+        minHeight: 0, // Prevent overflow
+        overflow: 'hidden',
+      }}>
+        <div style={{ flex: '1 1 auto', minWidth: 0 }}>
           <div style={{ fontSize: '9px', color: '#aaa', marginBottom: '2px' }}>SPEED</div>
-          <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#ffff00', lineHeight: '1.2' }}>
+          <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#ffff00', lineHeight: '1.2', whiteSpace: 'nowrap' }}>
             {speedKmh.toFixed(0)}<span style={{ fontSize: '10px', color: '#aaa' }}> km/h</span>
           </div>
         </div>
-        <div style={{ fontSize: '10px', color: '#888', marginLeft: '8px' }}>
+        <div style={{ fontSize: '9px', color: '#888', marginLeft: '8px', flexShrink: 0, whiteSpace: 'nowrap' }}>
           Avg: {avgSpeedKmh.toFixed(0)}
         </div>
       </div>

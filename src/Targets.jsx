@@ -3,6 +3,7 @@ import { Quaternion, TorusGeometry, Vector3 } from "three";
 import { mergeBufferGeometries } from "three-stdlib";
 import { useFrame } from "@react-three/fiber";
 import { planePosition } from "./Airplane";
+import { incrementRingCount } from "./RingCounter";
 
 function randomPoint(scale) {
   return new Vector3(
@@ -51,6 +52,8 @@ export function Targets() {
   }, [targets]);
 
   useFrame(() => {
+    let hitCount = 0;
+    
     targets.forEach((target, i) => {
       const v = planePosition.clone().sub(target.center);
       const dist = target.direction.dot(v);
@@ -59,10 +62,18 @@ export function Targets() {
         .sub(target.direction.clone().multiplyScalar(dist));
 
       const hitDist = projected.distanceTo(target.center);
-      if (hitDist < TARGET_RAD) {
+      if (hitDist < TARGET_RAD && !target.hit) {
         target.hit = true;
+        hitCount++;
       }
     });
+
+    // Increment counter for each new hit
+    if (hitCount > 0) {
+      for (let i = 0; i < hitCount; i++) {
+        incrementRingCount();
+      }
+    }
 
     const atLeastOneHit = targets.find((target) => target.hit);
     if (atLeastOneHit) {

@@ -35,15 +35,61 @@ export function CompassOverlay() {
         borderRadius: '50%',
       }}
     >
+      {/* Compass image - bigger */}
       <img
         src="/assets/comass_design.svg"
         alt="Compass"
         style={{
-          width: '70px',
-          height: '70px',
+          width: '75px',
+          height: '75px',
           filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
         }}
       />
+      
+      {/* Direction letters */}
+      <div style={{
+        position: 'absolute',
+        top: '2px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        fontSize: '12px',
+        fontWeight: 'bold',
+        color: '#ff0000',
+        textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+      }}>N</div>
+      
+      <div style={{
+        position: 'absolute',
+        bottom: '2px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        fontSize: '12px',
+        fontWeight: 'bold',
+        color: '#fff',
+        textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+      }}>S</div>
+      
+      <div style={{
+        position: 'absolute',
+        left: '2px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        fontSize: '12px',
+        fontWeight: 'bold',
+        color: '#fff',
+        textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+      }}>W</div>
+      
+      <div style={{
+        position: 'absolute',
+        right: '2px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        fontSize: '12px',
+        fontWeight: 'bold',
+        color: '#fff',
+        textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+      }}>E</div>
     </div>
   );
 }

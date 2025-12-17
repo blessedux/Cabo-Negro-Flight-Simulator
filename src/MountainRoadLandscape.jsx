@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, forwardRef } from "react";
 import { useGLTF, useTexture } from "@react-three/drei";
 import { Color, MeshStandardMaterial, RepeatWrapping, ClampToEdgeWrapping, PlaneGeometry } from "three";
 
-export function MountainRoadLandscape({ textureRotation = 0, ...props }) {
+export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({ textureRotation = 0, ...props }, ref) {
   const groupRef = useRef();
   const meshRefs = useRef([]);
   
@@ -357,11 +357,22 @@ export function MountainRoadLandscape({ textureRotation = 0, ...props }) {
   }
   
   // No scaling - use the terrain size directly
+  // Forward the ref to the group
+  useEffect(() => {
+    if (ref) {
+      if (typeof ref === 'function') {
+        ref(groupRef.current);
+      } else {
+        ref.current = groupRef.current;
+      }
+    }
+  }, [ref, processedScene]);
+  
   return (
     <group {...props} dispose={null} ref={groupRef}>
       <primitive object={processedScene} dispose={null} />
     </group>
   );
-}
+});
 
 useGLTF.preload("assets/models/terrain-tiles.glb");
