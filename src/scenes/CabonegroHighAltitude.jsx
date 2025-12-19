@@ -11,6 +11,8 @@ import { CameraDragControls } from "../CameraDragControls";
 import { LocationBeam } from "../LocationBeam";
 import { Compass } from "../Compass";
 import { CollisionDetector } from "../CollisionDetector";
+import { CameraAngleLogger } from "../CameraAngleLogger";
+import { CameraStartAnimation, resetCameraStartAnimation } from "../CameraStartAnimation";
 import { useTexture } from "@react-three/drei";
 import { useEffect } from "react";
 import { initializeHeightmap } from "../terrainHeightSampler";
@@ -18,6 +20,11 @@ import { initializeHeightmap } from "../terrainHeightSampler";
 export function CabonegroHighAltitude({ textureRotation = 0 }) {
   // textureRotation prop kept for compatibility but defaults to 0
   const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
+  
+  // Reset camera animation when scene loads/restarts
+  useEffect(() => {
+    resetCameraStartAnimation();
+  }, []);
   
   // Initialize terrain height sampler
   useEffect(() => {
@@ -29,10 +36,12 @@ export function CabonegroHighAltitude({ textureRotation = 0 }) {
   return (
     <>
       <CameraDragControls />
+      <CameraStartAnimation />
+      <CameraAngleLogger enabled={true} logInterval={1000} />
       <SphereEnv />
       <Environment background={false} files={"assets/textures/envmap.hdr"} />
 
-      <PerspectiveCamera makeDefault position={[0, 8, 8]} fov={60} />
+      <PerspectiveCamera makeDefault position={[0, 15, 12]} fov={60} />
 
       <MountainRoadLandscape textureRotation={textureRotation} />
       <Airplane />

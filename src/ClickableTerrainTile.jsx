@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
 import { Raycaster, Vector3 } from 'three';
 import { setCameraTarget } from './CameraAnimator';
 import { sampleTerrainHeight } from './terrainHeightSampler';
+import { setOrbitPaused } from './controls';
+import { setTileModalOpen } from './TileModal';
 
 export function ClickableTerrainTile({
   terrainGroupRef,
@@ -14,14 +15,15 @@ export function ClickableTerrainTile({
   ctaText = 'Learn More',
   ctaUrl = '#',
   tagText = 'Click Me',
+  squareSize = 0.2, // Size of the clickable square (default 0.2)
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
   const [tileMesh, setTileMesh] = useState(null);
   const [tagPosition, setTagPosition] = useState(new Vector3());
-  const tagRef = useRef();
+  const squareRef = useRef();
+  const raycasterRef = useRef(new Raycaster());
   const { scene, camera } = useThree();
-  const raycaster = useRef(new Raycaster());
   
   // Find the terrain mesh at the specified position
   useEffect(() => {
@@ -70,11 +72,11 @@ export function ClickableTerrainTile({
       closestMesh.getWorldPosition(meshPos);
       
       // Use raycaster to find exact surface point
-      raycaster.current.set(
+      raycasterRef.current.set(
         new Vector3(tilePosition[0], 100, tilePosition[2]),
         new Vector3(0, -1, 0)
       );
-      const intersects = raycaster.current.intersectObject(closestMesh, true);
+      const intersects = raycasterRef.current.intersectObject(closestMesh, true);
       
       if (intersects.length > 0) {
         const surfacePoint = intersects[0].point;
@@ -84,56 +86,62 @@ export function ClickableTerrainTile({
         setTagPosition(new Vector3(tilePosition[0], worldY, tilePosition[2]));
       }
       
-      // Add click handlers to the mesh
-      const originalOnClick = closestMesh.onClick;
-      const originalOnPointerOver = closestMesh.onPointerOver;
-      const originalOnPointerOut = closestMesh.onPointerOut;
-      
-      closestMesh.onClick = (e) => {
-        e.stopPropagation();
-        if (cameraTarget) {
-          setIsClicked(true);
-          setCameraTarget(cameraTarget.position, cameraTarget.rotation);
-        }
-        if (originalOnClick) originalOnClick(e);
-      };
-      
-      closestMesh.onPointerOver = (e) => {
-        e.stopPropagation();
-        setIsHovered(true);
-        document.body.style.cursor = 'pointer';
-        if (originalOnPointerOver) originalOnPointerOver(e);
-      };
-      
-      closestMesh.onPointerOut = (e) => {
-        e.stopPropagation();
-        setIsHovered(false);
-        document.body.style.cursor = '';
-        if (originalOnPointerOut) originalOnPointerOut(e);
-      };
-      
-      // Cleanup
-      return () => {
-        if (closestMesh) {
-          closestMesh.onClick = originalOnClick;
-          closestMesh.onPointerOver = originalOnPointerOver;
-          closestMesh.onPointerOut = originalOnPointerOut;
-        }
-      };
+      // Note: Click handlers will be on the square mesh, not the terrain mesh
     }
   }, [terrainGroupRef, tilePosition, cameraTarget]);
   
-  // Animate tag floating
-  useFrame((state) => {
-    if (tagRef.current && tagPosition) {
-      tagRef.current.position.copy(tagPosition);
-      tagRef.current.position.y += 0.5 + Math.sin(state.clock.elapsedTime * 2) * 0.1;
+
+  // Handle square click
+  const handleSquareClick = (e) => {
+    e.stopPropagation();
+    if (cameraTarget) {
+      setIsClicked(true);
+      setOrbitPaused(true); // Stop orbit animation when tile is clicked
+      setCameraTarget(cameraTarget.position, cameraTarget.rotation);
+      // Open modal outside Canvas
+      setTileModalOpen(true, {
+        title,
+        paragraph,
+        ctaText,
+        ctaUrl,
+      });
     }
-  });
+  };
+
+  // Handle square hover
+  const handleSquarePointerOver = (e) => {
+    e.stopPropagation();
+    setIsHovered(true);
+    document.body.style.cursor = 'pointer';
+  };
+
+  const handleSquarePointerOut = (e) => {
+    e.stopPropagation();
+    setIsHovered(false);
+    document.body.style.cursor = '';
+  };
   
   const handleClose = () => {
     setIsClicked(false);
+    setOrbitPaused(false); // Resume orbit animation when popup is closed
+    setTileModalOpen(false); // Close modal
   };
+  
+  // Listen for modal close events
+  useEffect(() => {
+    const handleModalClose = () => {
+      setIsClicked(false);
+      setOrbitPaused(false);
+    };
+    
+    // Subscribe to modal close (we'll use a custom event for simplicity)
+    const handleCustomClose = () => handleModalClose();
+    window.addEventListener('tileModalClosed', handleCustomClose);
+    
+    return () => {
+      window.removeEventListener('tileModalClosed', handleCustomClose);
+    };
+  }, []);
   
   const handleCTAClick = (e) => {
     e.stopPropagation();
@@ -142,23 +150,22 @@ export function ClickableTerrainTile({
     }
   };
   
-  // Animated highlight ring around the tile
-  const highlightRef = useRef();
-  
-  // Animate the highlight
+  // Animate the square with pulsating blue light
   useFrame((state) => {
-    if (highlightRef.current && tileMesh) {
-      // Pulse animation - more dramatic
+    if (squareRef.current && tagPosition) {
+      // Pulse animation for blue light
       const pulse = Math.sin(state.clock.elapsedTime * 2.5) * 0.5 + 0.5;
-      const scale = 1 + pulse * 0.3; // Scale from 1.0 to 1.3
-      highlightRef.current.scale.set(scale, scale, 1);
-      highlightRef.current.material.opacity = 0.4 + pulse * 0.5;
-      highlightRef.current.material.emissive.setRGB(0, 0.4 + pulse * 0.6, 1);
+      const intensity = 0.4 + pulse * 0.6; // Pulse from 0.4 to 1.0
       
-      // Position highlight at tile position
-      if (tagPosition) {
-        highlightRef.current.position.set(tagPosition.x, tagPosition.y + 0.01, tagPosition.z);
+      // Update material emissive and opacity
+      if (squareRef.current.material) {
+        squareRef.current.material.emissive.setRGB(0, 0.3 + pulse * 0.7, 1);
+        squareRef.current.material.emissiveIntensity = intensity * 2;
+        squareRef.current.material.opacity = 0.5 + pulse * 0.5;
       }
+      
+      // Position square at tile position, slightly above terrain
+      squareRef.current.position.set(tagPosition.x, tagPosition.y + 0.01, tagPosition.z);
     }
   });
   
@@ -166,165 +173,28 @@ export function ClickableTerrainTile({
     return null; // Wait for mesh to be found
   }
   
+  // Square size is now passed as a prop (default 0.2)
+
   return (
     <>
-      {/* Animated blue highlight ring */}
-      <mesh ref={highlightRef} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[2, 2.8, 64]} />
+      {/* Clickable square with pulsating blue light animation */}
+      <mesh
+        ref={squareRef}
+        rotation={[-Math.PI / 2, 0, 0]}
+        onClick={handleSquareClick}
+        onPointerOver={handleSquarePointerOver}
+        onPointerOut={handleSquarePointerOut}
+      >
+        <planeGeometry args={[squareSize, squareSize]} />
         <meshStandardMaterial
           color="#0066ff"
           emissive="#0066ff"
           transparent
-          opacity={0.6}
+          opacity={0.7}
           side={2} // DoubleSide
-          emissiveIntensity={2}
+          emissiveIntensity={1.5}
         />
       </mesh>
-      
-      {/* Floating tag above the tile */}
-      <mesh ref={tagRef}>
-        <Html
-          center
-          style={{
-            pointerEvents: 'none',
-            userSelect: 'none',
-          }}
-        >
-          <div
-            style={{
-              background: isHovered ? 'rgba(100, 150, 255, 0.9)' : 'rgba(255, 255, 255, 0.8)',
-              color: isHovered ? 'white' : '#333',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              whiteSpace: 'nowrap',
-              transition: 'all 0.2s',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-            }}
-          >
-            {tagText}
-          </div>
-        </Html>
-      </mesh>
-      
-      {/* Content overlay when clicked */}
-      {isClicked && (
-        <Html
-          center
-          style={{
-            width: '100%',
-            height: '100%',
-            pointerEvents: 'auto',
-          }}
-        >
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              background: 'rgba(0, 0, 0, 0.85)',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              zIndex: 10000,
-              backdropFilter: 'blur(5px)',
-            }}
-            onClick={handleClose}
-          >
-            <div
-              style={{
-                background: 'rgba(20, 20, 30, 0.95)',
-                padding: '40px',
-                borderRadius: '15px',
-                border: '2px solid rgba(255, 255, 255, 0.1)',
-                maxWidth: '600px',
-                width: '90%',
-                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-                pointerEvents: 'auto',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2
-                style={{
-                  color: '#fff',
-                  marginTop: 0,
-                  marginBottom: '20px',
-                  fontSize: '28px',
-                  fontWeight: 'bold',
-                }}
-              >
-                {title}
-              </h2>
-              <p
-                style={{
-                  color: '#ccc',
-                  marginBottom: '30px',
-                  fontSize: '16px',
-                  lineHeight: '1.6',
-                }}
-              >
-                {paragraph}
-              </p>
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '15px',
-                  justifyContent: 'flex-end',
-                }}
-              >
-                <button
-                  onClick={handleClose}
-                  style={{
-                    padding: '12px 24px',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.background = 'rgba(255, 255, 255, 0.2)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.background = 'rgba(255, 255, 255, 0.1)';
-                  }}
-                >
-                  Continue Exploring
-                </button>
-                <button
-                  onClick={handleCTAClick}
-                  style={{
-                    padding: '12px 24px',
-                    background: 'rgba(100, 150, 255, 0.8)',
-                    border: 'none',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.background = 'rgba(100, 150, 255, 1)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.background = 'rgba(100, 150, 255, 0.8)';
-                  }}
-                >
-                  {ctaText}
-                </button>
-              </div>
-            </div>
-          </div>
-        </Html>
-      )}
     </>
   );
 }

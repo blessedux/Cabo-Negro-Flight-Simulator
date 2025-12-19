@@ -1,5 +1,6 @@
 // Terrain height sampling utility
 // Based on the same logic used in MountainRoadLandscape and LocationBeam
+// Uses real topography from heightmap
 
 let heightmapData = null;
 let heightmapCanvas = null;
@@ -62,15 +63,17 @@ export function sampleTerrainHeight(sceneX, sceneZ) {
   const pixelX = Math.floor(heightmapCenterX + (offsetEast / heightmapMetersPerPixel));
   const pixelY = Math.floor(heightmapCenterY - (offsetNorth / heightmapMetersPerPixel));
   
-  // Sample heightmap
+  // Sample heightmap - use real topography
   if (pixelX >= 0 && pixelX < heightmapCanvas.width && pixelY >= 0 && pixelY < heightmapCanvas.height) {
     const pixelIndex = (pixelY * heightmapCanvas.width + pixelX) * 4;
-    const gray = (heightmapData[pixelIndex] + heightmapData[pixelIndex + 1] + heightmapData[pixelIndex + 2]) / 3;
-    const normalizedHeight = gray / 255;
+    const elevationValue = heightmapData[pixelIndex]; // Using red channel (grayscale)
+    
+    // Use heightmap directly for real topography (same as MountainRoadLandscape)
+    const normalizedElevation = elevationValue / 255;
     const seaLevelThreshold = 0.25;
-    const adjustedHeight = (normalizedHeight - seaLevelThreshold) / (1 - seaLevelThreshold);
+    const adjustedElevation = (normalizedElevation - seaLevelThreshold) / (1 - seaLevelThreshold);
     const heightScale = 5.0; // Matching MountainRoadLandscape
-    const height = adjustedHeight * heightScale;
+    const height = adjustedElevation * heightScale;
     return height;
   }
   

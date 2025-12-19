@@ -1,10 +1,14 @@
 import React from "react";
-import { CabonegroHighAltitude, Scene2, Scene3 } from "./scenes";
+import { CabonegroHighAltitude, Scene1, Scene2, Scene3 } from "./scenes";
 
+// Scene mapping
+// For /flight route: sceneNumber 0 = CabonegroHighAltitude
+// For /explore route: sceneNumber 1 = Scene1 (Default Orbit), 2 = Scene2 (Punta Arenas), 3 = Scene3 (Satellite)
 const SCENES = {
-  1: CabonegroHighAltitude,
-  2: Scene2,
-  3: Scene3,
+  0: CabonegroHighAltitude, // Flight scene
+  1: Scene1, // Default Orbit (explore scene 1)
+  2: Scene2, // Punta Arenas (explore scene 2)
+  3: Scene3, // Satellite (explore scene 3)
 };
 
 const SCENE_NAMES = {
@@ -13,8 +17,8 @@ const SCENE_NAMES = {
   3: "scene_3",
 };
 
-function App({ sceneNumber = 1 }) {
-  const SceneComponent = SCENES[sceneNumber] || SCENES[1];
+function App({ sceneNumber = 0 }) {
+  const SceneComponent = SCENES[sceneNumber] || SCENES[0];
 
   return <SceneComponent />;
 }

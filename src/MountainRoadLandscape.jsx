@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState, forwardRef } from "react";
 import { useGLTF, useTexture } from "@react-three/drei";
 import { Color, MeshStandardMaterial, RepeatWrapping, ClampToEdgeWrapping, PlaneGeometry } from "three";
+import { getHeightExaggeration } from "./terrainHeightUtils";
 
 export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({ textureRotation = 0, ...props }, ref) {
   const groupRef = useRef();
   const meshRefs = useRef([]);
+  const [heightExaggeration, setHeightExaggeration] = useState(getHeightExaggeration());
   
   // Load the GLB model
   const { scene } = useGLTF("assets/models/terrain-tiles.glb");
@@ -12,6 +14,18 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
   // Load both textures
   const terrainTexture = useTexture("assets/textures/terrain-texture.png");
   const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
+  
+  // Listen for height exaggeration changes
+  useEffect(() => {
+    const handleExaggerationChange = (event) => {
+      setHeightExaggeration(event.detail.multiplier);
+    };
+    
+    window.addEventListener('heightExaggerationChanged', handleExaggerationChange);
+    return () => {
+      window.removeEventListener('heightExaggerationChanged', handleExaggerationChange);
+    };
+  }, []);
   
   // Configure textures
   useEffect(() => {
@@ -77,16 +91,17 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
     // Clone the scene to avoid mutating the original
     const clonedScene = scene.clone();
     
-    // Get heightmap image data
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = heightmapTexture.image.width || 512;
-    canvas.height = heightmapTexture.image.height || 512;
-    ctx.drawImage(heightmapTexture.image, 0, 0);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
+    // Get heightmap image data (for elevation - real topography)
+    const heightmapCanvas = document.createElement('canvas');
+    const heightmapCtx = heightmapCanvas.getContext('2d');
+    heightmapCanvas.width = heightmapTexture.image.width || 512;
+    heightmapCanvas.height = heightmapTexture.image.height || 512;
+    heightmapCtx.drawImage(heightmapTexture.image, 0, 0);
+    const heightmapImageData = heightmapCtx.getImageData(0, 0, heightmapCanvas.width, heightmapCanvas.height);
+    const heightmapData = heightmapImageData.data;
     
-    console.log(`Heightmap loaded: ${canvas.width}x${canvas.height} pixels`);
+    console.log(`Heightmap loaded: ${heightmapCanvas.width}x${heightmapCanvas.height} pixels`);
+    console.log(`Using real topography from heightmap`);
     
     // Terrain settings based on documentation
     // Texture: 2048×2048 pixels covering ~3.45 km × 3.45 km
@@ -112,7 +127,7 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
     
     // Heightmap settings
     const heightmapCoverageMeters = 80000; // 80 km
-    const heightmapMetersPerPixel = heightmapCoverageMeters / canvas.width; // ~78.125 m/pixel
+    const heightmapMetersPerPixel = heightmapCoverageMeters / heightmapCanvas.width; // ~78.125 m/pixel
     
     // Texture center: -52.871294° S, -70.861816° W (from documentation)
     // Heightmap center: -53.061222° S, -70.878388° W (from documentation)
@@ -134,8 +149,8 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
     
     // Convert offset to heightmap pixel coordinates
     // Heightmap center is at (512, 512) in pixel space
-    const heightmapCenterX = canvas.width / 2;
-    const heightmapCenterY = canvas.height / 2;
+    const heightmapCenterX = heightmapCanvas.width / 2;
+    const heightmapCenterY = heightmapCanvas.height / 2;
     const textureCenterX = heightmapCenterX + (offsetEast / heightmapMetersPerPixel);
     const textureCenterY = heightmapCenterY - (offsetNorth / heightmapMetersPerPixel); // Negative because Y is flipped
     
@@ -147,17 +162,20 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
     const heightScale = 5.0; // Increased for visible height variation
     const segments = 512; // High resolution for detailed terrain (increased from 128)
     
+    // Get current height exaggeration multiplier
+    const exaggeration = heightExaggeration;
+    
     // Check if texture region is within heightmap bounds
     const textureRegionValid = 
-      textureCenterX >= 0 && textureCenterX < canvas.width &&
-      textureCenterY >= 0 && textureCenterY < canvas.height &&
-      textureSizeInHeightmapPixels > 0 && textureSizeInHeightmapPixels < canvas.width;
+      textureCenterX >= 0 && textureCenterX < heightmapCanvas.width &&
+      textureCenterY >= 0 && textureCenterY < heightmapCanvas.height &&
+      textureSizeInHeightmapPixels > 0 && textureSizeInHeightmapPixels < heightmapCanvas.width;
     
     // If region is invalid, use center of heightmap as fallback
     const useAlignedRegion = textureRegionValid;
-    const finalTextureCenterX = useAlignedRegion ? textureCenterX : canvas.width / 2;
-    const finalTextureCenterY = useAlignedRegion ? textureCenterY : canvas.height / 2;
-    const finalTextureSize = useAlignedRegion ? textureSizeInHeightmapPixels : Math.min(canvas.width, canvas.height) * 0.1; // 10% of heightmap
+    const finalTextureCenterX = useAlignedRegion ? textureCenterX : heightmapCanvas.width / 2;
+    const finalTextureCenterY = useAlignedRegion ? textureCenterY : heightmapCanvas.height / 2;
+    const finalTextureSize = useAlignedRegion ? textureSizeInHeightmapPixels : Math.min(heightmapCanvas.width, heightmapCanvas.height) * 0.1; // 10% of heightmap
     
     console.log("=== TERRAIN ALIGNMENT ===");
     console.log(`Texture coverage (real): ${textureCoverageMeters}m (${(textureCoverageMeters/1000).toFixed(2)} km)`);
@@ -238,35 +256,30 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
           uvs.array[uvIndex] = u;
           uvs.array[uvIndex + 1] = v;
           
-          // Map UV coordinates to the texture region in the heightmap
-          // The texture covers a small region centered at (finalTextureCenterX, finalTextureCenterY)
+          // Sample elevation from heightmap (grayscale elevation data)
           const heightmapU = (u - 0.5) * finalTextureSize + finalTextureCenterX;
           const heightmapV = (v - 0.5) * finalTextureSize + finalTextureCenterY;
           
           // Clamp to valid heightmap bounds
-          const pixelX = Math.max(0, Math.min(canvas.width - 1, Math.floor(heightmapU)));
-          const pixelY = Math.max(0, Math.min(canvas.height - 1, Math.floor(heightmapV)));
-          const pixelIndex = (pixelY * canvas.width + pixelX) * 4;
+          const heightmapPixelX = Math.max(0, Math.min(heightmapCanvas.width - 1, Math.floor(heightmapU)));
+          const heightmapPixelY = Math.max(0, Math.min(heightmapCanvas.height - 1, Math.floor(heightmapV)));
+          const heightmapPixelIndex = (heightmapPixelY * heightmapCanvas.width + heightmapPixelX) * 4;
           
-          if (pixelIndex >= 0 && pixelIndex < data.length - 3) {
-            // Get grayscale value
-            const r = data[pixelIndex];
-            const g = data[pixelIndex + 1];
-            const b = data[pixelIndex + 2];
-            const gray = (r + g + b) / 3;
+          if (heightmapPixelIndex >= 0 && heightmapPixelIndex < heightmapData.length - 3) {
             
-            // Apply height (white = high, black = low)
-            // Normalize to 0-1 range
-            const normalizedHeight = gray / 255;
+            // Get elevation value from heightmap (grayscale - this is actual elevation data)
+            const elevationValue = heightmapData[heightmapPixelIndex]; // Using red channel (grayscale)
             
-            // Apply height with sea level offset
-            // Documentation says 25% of range = sea level, so adjust
-            // This ensures water areas (dark) go below 0, land (bright) goes above
+            // Use heightmap directly for real topography
+            // Normalize elevation to 0-1 range
+            const normalizedElevation = elevationValue / 255;
+            
+            // Apply sea level threshold (25% = sea level based on documentation)
             const seaLevelThreshold = 0.25;
-            const adjustedHeight = (normalizedHeight - seaLevelThreshold) / (1 - seaLevelThreshold);
+            const adjustedElevation = (normalizedElevation - seaLevelThreshold) / (1 - seaLevelThreshold);
             
-            // Scale the height
-            const height = adjustedHeight * heightScale;
+            // Apply base height scale and exaggeration multiplier
+            const height = adjustedElevation * heightScale * heightExaggeration;
             
             // Apply height to Y coordinate (vertical axis)
             positionArray[i + 1] = height;
@@ -324,9 +337,10 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
         child.material = new MeshStandardMaterial({
           map: terrainTexture,
           color: 0xffffff,
-          roughness: 0.8,
-          metalness: 0.1,
+          roughness: 0.7, // Slightly less rough for better texture visibility
+          metalness: 0.05, // Lower metalness for more natural terrain
           side: 2, // DoubleSide to ensure visibility
+          flatShading: false, // Smooth shading for better appearance
         });
         
         // Verify texture settings
@@ -350,7 +364,7 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
     
     console.log(`=== TERRAIN PROCESSING COMPLETE (${meshCount} meshes) ===`);
     return clonedScene;
-  }, [scene, heightmapTexture, terrainTexture, textureRotation]);
+  }, [scene, heightmapTexture, terrainTexture, textureRotation, heightExaggeration]);
   
   if (!processedScene) {
     return null; // Wait for everything to load

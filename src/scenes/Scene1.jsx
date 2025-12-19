@@ -16,8 +16,8 @@ import { useTexture } from "@react-three/drei";
 import { useEffect, useRef } from "react";
 import { initializeHeightmap } from "../terrainHeightSampler";
 
-export function Scene3({ textureRotation = 0 }) {
-  // Satellite view scene
+export function Scene1({ textureRotation = 0 }) {
+  // Default Orbit scene - explore scene without interactive tile
   const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
   const terrainRef = useRef();
   
@@ -36,7 +36,7 @@ export function Scene3({ textureRotation = 0 }) {
       <SphereEnv />
       <Environment background={false} files={"assets/textures/envmap.hdr"} />
 
-      <PerspectiveCamera makeDefault position={[0, 50, 50]} fov={60} />
+      <PerspectiveCamera makeDefault position={[0, 8, 8]} fov={60} />
 
       <MountainRoadLandscape ref={terrainRef} textureRotation={textureRotation} />
       <LocationBeam />

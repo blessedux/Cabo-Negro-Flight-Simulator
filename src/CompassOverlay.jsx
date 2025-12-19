@@ -20,8 +20,8 @@ export function CompassOverlay() {
       ref={compassRef}
       style={{
         position: 'fixed',
-        top: '10px',
-        left: '10px',
+        bottom: '20px',
+        left: '20px',
         width: '80px',
         height: '80px',
         zIndex: 1001,

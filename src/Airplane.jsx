@@ -9,6 +9,7 @@ import { useFrame } from '@react-three/fiber';
 import { Matrix4, Quaternion, Vector3, SRGBColorSpace, Color } from 'three';
 import { updatePlaneAxis, isMenuOpen } from './controls';
 import { cameraRotationOffset } from './CameraDragControls';
+import { getAnimatedCameraParams } from './CameraStartAnimation';
 
 const x = new Vector3(1, 0, 0);
 const y = new Vector3(0, 1, 0);
@@ -239,16 +240,34 @@ export function Airplane(props) {
     delayedRotMatrix.makeRotationFromQuaternion(delayedQuaternion);
 
     // Base camera offset relative to airplane (behind and slightly above)
-    // This is the default position when no drag rotation is applied
-    const baseCameraOffset = new Vector3(0, 0.015, 0.3);
+    // These are the initial values before animation starts
+    // After animation completes, the final values will be used instead
+    const startBaseCameraOffset = new Vector3(0, 0.1, 0.4);
+    const startDownAngle = -0.35;
+    
+    // Get animated camera parameters
+    // During animation: returns interpolated values
+    // After animation completes: returns final (target) values
+    // Before animation starts: returns start values
+    const animatedParams = getAnimatedCameraParams(
+      { x: startBaseCameraOffset.x, y: startBaseCameraOffset.y, z: startBaseCameraOffset.z },
+      startDownAngle
+    );
+    
+    const baseCameraOffset = new Vector3(
+      animatedParams.offset.x,
+      animatedParams.offset.y,
+      animatedParams.offset.z
+    );
     
     // Apply the airplane's rotation to the base offset
     // This makes the camera follow behind the airplane
     const rotatedOffset = baseCameraOffset.clone();
     rotatedOffset.applyMatrix4(delayedRotMatrix);
     
-    // Apply additional rotation for the slight downward angle
-    const downAngle = new Matrix4().makeRotationX(-0.2);
+    // Apply additional rotation for the downward angle
+    // Changed default: steeper downward angle for better view from above
+    const downAngle = new Matrix4().makeRotationX(animatedParams.downAngle);
     rotatedOffset.applyMatrix4(downAngle);
     
     // Now apply drag rotation offsets to orbit around the airplane

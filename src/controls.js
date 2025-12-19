@@ -5,6 +5,12 @@ function easeOutQuad(x) {
 export let controls = {};
 export let isPaused = false;
 export let isMenuOpen = false;
+export let isOrbitPaused = false; // Separate state for orbit animation pause
+
+// Function to set orbit pause state (can be called from other components)
+export function setOrbitPaused(value) {
+  isOrbitPaused = value;
+}
 
 // Callback system for React components to subscribe to state changes
 let menuOpenCallbacks = [];
@@ -51,10 +57,10 @@ export function setMenuOpen(value) {
 window.addEventListener("keydown", (e) => {
   const key = e.key.toLowerCase();
   
-  // Handle Space key for pause (only if menu is not open)
+  // Handle Space key for orbit pause (only if menu is not open)
   if (key === " " && !isMenuOpen) {
     e.preventDefault();
-    setPaused(!isPaused);
+    isOrbitPaused = !isOrbitPaused;
     return;
   }
   

@@ -12,6 +12,7 @@ import { CollisionDetector } from "../CollisionDetector";
 import { CameraPositionLogger } from "../CameraPositionLogger";
 import { CameraAnimator } from "../CameraAnimator";
 import { ClickableTerrainTile } from "../ClickableTerrainTile";
+import { CoordinateRuler } from "../CoordinateRuler";
 import { useTexture } from "@react-three/drei";
 import { useEffect, useRef } from "react";
 import { initializeHeightmap } from "../terrainHeightSampler";
@@ -43,13 +44,23 @@ export function Scene2({ textureRotation = 0 }) {
       <Compass />
       <CollisionDetector />
       
-      {/* Clickable terrain tile - uses an existing tile from the map */}
+      {/* Coordinate Ruler - helps visualize coordinate system */}
+      <CoordinateRuler 
+        centerX={0} 
+        centerZ={0} 
+        range={15} 
+        markerSpacing={1} 
+        showLabels={true} 
+      />
+      
+      {/* Clickable terrain tile - moved -5 tiles north (blue direction) */}
       <ClickableTerrainTile
         terrainGroupRef={terrainRef}
-        tilePosition={[2, 0, 2]} // X, Z position (Y will be calculated from terrain height)
+        tilePosition={[0, 0.0009, -0.33]} // X, Z position - moved -5 tiles north (5 * 11.48 * 0.01 = 0.574, north is negative Z) - Y will be calculated from terrain height
+        squareSize={0.05} // 1/4 of original size (0.2 / 4 = 0.05)
         cameraTarget={{
-          position: [3, 3, 3],
-          rotation: { pitch: -0.3, yaw: 0.785, roll: 0 }
+          position: [-0.433, 0.8, -0.621],
+          rotation: { pitch: -0.9408, yaw: -1.8187, roll: 0 }
         }}
         title="Placeholder Title"
         paragraph="This is a placeholder paragraph. Replace this with your actual content. The camera will animate to the specified position and angle when this tile is clicked."

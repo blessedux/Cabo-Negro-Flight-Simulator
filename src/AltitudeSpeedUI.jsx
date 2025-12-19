@@ -87,8 +87,8 @@ export function AltitudeSpeedUI() {
     <div
       style={{
         position: 'fixed',
-        top: 10,
-        left: 100, // Position to the right of the compass (10px + 80px + 10px gap)
+        bottom: 20,
+        left: 110, // Position to the right of the compass (20px + 80px + 10px gap)
         zIndex: 1000,
         background: 'rgba(0, 0, 0, 0.8)',
         padding: '10px 14px',
