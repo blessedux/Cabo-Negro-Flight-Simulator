@@ -41,6 +41,10 @@
     {
       "source": "/terrain-3d-test",
       "destination": "/index.html"
+    },
+    {
+      "source": "/",
+      "destination": "/index.html"
     }
   ]
 }
