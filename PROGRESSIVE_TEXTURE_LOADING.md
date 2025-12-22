@@ -1,6 +1,7 @@
 # Progressive Texture Loading Solution
 
 ## Problem
+
 The high-resolution terrain texture (16384×16384, 196MB) exceeds GitHub's 100MB file size limit, but we want to use it for better visual quality while maintaining fast load times.
 
 ## Solution: Progressive Loading + Cloudflare R2
@@ -24,12 +25,14 @@ The high-resolution terrain texture (16384×16384, 196MB) exceeds GitHub's 100MB
 ### Setup Instructions
 
 1. **Create Cloudflare R2 Bucket** (see `CLOUDFLARE_R2_SETUP.md`)
+
    - Sign up at https://dash.cloudflare.com
    - Create bucket: `cabonegro-assets`
    - Enable public access
    - Upload `terrain-texture.png` (196MB)
 
 2. **Update Asset Config**
+
    - Open `src/config/assets.js`
    - Set `R2_BASE_URL` to your R2 public URL:
      ```javascript
@@ -53,4 +56,3 @@ The high-resolution terrain texture (16384×16384, 196MB) exceeds GitHub's 100MB
 - **Background load**: ~196MB (high-res texture, non-blocking)
 - **User experience**: Terrain visible immediately, quality improves automatically
 - **CDN caching**: Both textures cached by Cloudflare for subsequent visits
-

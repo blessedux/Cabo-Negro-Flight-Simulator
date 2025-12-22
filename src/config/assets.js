@@ -6,10 +6,15 @@ const USE_CDN = true; // Set to true when CDN is ready
 const CDN_BASE_URL = "https://raw.githubusercontent.com/blessedux/cabonegro-assets/main";
 const LOCAL_BASE_URL = ""; // Empty for local assets (relative paths)
 
-// Cloudflare R2 for large files (high-res textures)
-// Set this to your R2 public URL after uploading terrain-texture.png
-// Format: https://pub-xxxxx.r2.dev
-const R2_BASE_URL = null; // Set to your R2 URL when ready, e.g., "https://pub-xxxxx.r2.dev"
+// CDN for large files (high-res textures, 196MB)
+// Choose one of the following options:
+// 1. Cloudflare R2: https://pub-xxxxx.r2.dev
+// 2. Backblaze B2: https://f000.backblazeb2.com/file/bucket-name/
+// 3. AWS S3: https://bucket-name.s3.region.amazonaws.com
+// 4. DigitalOcean Spaces: https://bucket-name.region.digitaloceanspaces.com
+// 5. Bunny CDN: https://storage.bunnycdn.com/zone-name/
+// Set to null to disable high-res texture (uses low-res only)
+const LARGE_FILE_CDN_URL = "https://pub-e0cbd7becdde415788b6e7249e704abb.r2.dev" ; // e.g., "https://pub-xxxxx.r2.dev" or "https://f000.backblazeb2.com/file/bucket-name/"
 
 const BASE_URL = USE_CDN ? CDN_BASE_URL : LOCAL_BASE_URL;
 
@@ -37,9 +42,9 @@ export const TEXTURES = {
   // Low-res texture (fast initial load, 3.2MB)
   terrainTextureLow: getAssetUrl("assets/textures/terrain-texture-low.png"),
   // High-res texture (progressive loading, 196MB)
-  // Uses R2 if available, otherwise falls back to low-res
-  terrainTexture: R2_BASE_URL 
-    ? `${R2_BASE_URL}/terrain-texture.png`
+  // Uses LARGE_FILE_CDN_URL if available, otherwise falls back to low-res
+  terrainTexture: LARGE_FILE_CDN_URL 
+    ? `${LARGE_FILE_CDN_URL}/terrain-texture.png`
     : getAssetUrl("assets/textures/terrain-texture-low.png"),
   envmapHdr: getAssetUrl("assets/textures/envmap.hdr"),
   envmapJpg: getAssetUrl("assets/textures/envmap.jpg"),
