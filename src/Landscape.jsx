@@ -8,7 +8,7 @@ import { MeshReflectorMaterial, useGLTF } from "@react-three/drei";
 import { Color, MeshStandardMaterial } from "three";
 
 export function Landscape(props) {
-  const { nodes, materials } = useGLTF("assets/models/scene.glb");
+  const { nodes, materials } = useGLTF("/assets/models/scene.glb");
 
   const [lightsMaterial, waterMaterial] = useMemo(() => {
     return [
@@ -104,4 +104,4 @@ export function Landscape(props) {
   );
 }
 
-useGLTF.preload("assets/models/scene.glb");
+useGLTF.preload("/assets/models/scene.glb");

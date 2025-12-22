@@ -35,7 +35,7 @@ function DataCenterModels() {
 
 export function Scene6({ textureRotation = 0 }) {
   // Scene 6: Data Center Potential - Static hold with micro drift
-  const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
+  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
   const terrainRef = useRef();
   
   // Initialize terrain height sampler
@@ -71,7 +71,7 @@ export function Scene6({ textureRotation = 0 }) {
       <CameraAnimator />
       <CameraPositionLogger />
       <SphereEnv />
-      <Environment background={false} files={"assets/textures/envmap.hdr"} />
+      <Environment background={false} files={"/assets/textures/envmap.hdr"} />
 
       <PerspectiveCamera makeDefault position={[2.4, 2.2, 4.1]} fov={38} />
 

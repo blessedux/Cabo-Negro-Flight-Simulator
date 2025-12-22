@@ -35,7 +35,7 @@ function WindTurbineModels() {
 
 export function Scene5({ textureRotation = 0 }) {
   // Scene 5: Wind Energy Potential - Lateral tracking shot
-  const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
+  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
   const terrainRef = useRef();
   
   // Initialize terrain height sampler
@@ -71,7 +71,7 @@ export function Scene5({ textureRotation = 0 }) {
       <CameraAnimator />
       <CameraPositionLogger />
       <SphereEnv />
-      <Environment background={false} files={"assets/textures/envmap.hdr"} />
+      <Environment background={false} files={"/assets/textures/envmap.hdr"} />
 
       <PerspectiveCamera makeDefault position={[-6.2, 3.0, 2.5]} fov={42} />
 

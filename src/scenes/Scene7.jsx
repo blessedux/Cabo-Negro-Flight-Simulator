@@ -40,7 +40,7 @@ function SynthesisModels() {
 
 export function Scene7({ textureRotation = 0 }) {
   // Scene 7: Synthesis / Investable Land - Slow pull-back + rise
-  const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
+  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
   const terrainRef = useRef();
   
   // Initialize terrain height sampler
@@ -76,7 +76,7 @@ export function Scene7({ textureRotation = 0 }) {
       <CameraAnimator />
       <CameraPositionLogger />
       <SphereEnv />
-      <Environment background={false} files={"assets/textures/envmap.hdr"} />
+      <Environment background={false} files={"/assets/textures/envmap.hdr"} />
 
       <PerspectiveCamera makeDefault position={[0.0, 6.5, 10.0]} fov={40} />
 

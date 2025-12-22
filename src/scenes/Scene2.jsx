@@ -21,7 +21,7 @@ import { getCurrentExploreScene, subscribeToExploreScene } from "../SceneNavigat
 
 export function Scene2({ textureRotation = 0 }) {
   // Scene 2: Punta Arenas Context - Slow pan orbit
-  const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
+  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
   const terrainRef = useRef();
   
   // Initialize terrain height sampler
@@ -57,7 +57,7 @@ export function Scene2({ textureRotation = 0 }) {
       <CameraAnimator />
       <CameraPositionLogger />
       <SphereEnv />
-      <Environment background={false} files={"assets/textures/envmap.hdr"} />
+      <Environment background={false} files={"/assets/textures/envmap.hdr"} />
 
       <PerspectiveCamera makeDefault position={[-12.0, 4.2, 9.0]} fov={40} />
 

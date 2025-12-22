@@ -126,7 +126,7 @@ function CargoShipModel() {
   
   // Load cargo ship model - useGLTF must be called unconditionally
   // Errors are handled by Suspense/ErrorBoundary in parent component
-  const shipModel = useGLTF("assets/models/cargo_ship_02.glb");
+  const shipModel = useGLTF("/assets/models/cargo_ship_02.glb");
 
   useFrame(() => {
     if (!shipRef.current) return;
@@ -254,4 +254,4 @@ export function CargoShip() {
 }
 
 // Preload the cargo ship model at module level (like Airplane.jsx)
-useGLTF.preload("assets/models/cargo_ship_02.glb");
+useGLTF.preload("/assets/models/cargo_ship_02.glb");

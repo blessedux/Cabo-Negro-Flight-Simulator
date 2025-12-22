@@ -27,7 +27,7 @@ function Satellite({
   const [isHovered, setIsHovered] = useState(false);
   
   // Load the actual Starlink satellite model - must be called unconditionally
-  const { scene: satelliteModel } = useGLTF("assets/models/starlink_spacex_satellite.glb");
+  const { scene: satelliteModel } = useGLTF("/assets/models/starlink_spacex_satellite.glb");
   
   // Handle click on satellite
   const handleClick = (e) => {
@@ -251,4 +251,4 @@ export function Satellites() {
 }
 
 // Preload the Starlink satellite model
-useGLTF.preload("assets/models/starlink_spacex_satellite.glb");
+useGLTF.preload("/assets/models/starlink_spacex_satellite.glb");

@@ -39,7 +39,7 @@ function MaritimeTerminalModels() {
 
 export function Scene4({ textureRotation = 0 }) {
   // Scene 4: Maritime Terminal - Dolly forward
-  const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
+  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
   const terrainRef = useRef();
   
   // Initialize terrain height sampler
@@ -75,7 +75,7 @@ export function Scene4({ textureRotation = 0 }) {
       <CameraAnimator />
       <CameraPositionLogger />
       <SphereEnv />
-      <Environment background={false} files={"assets/textures/envmap.hdr"} />
+      <Environment background={false} files={"/assets/textures/envmap.hdr"} />
 
       <PerspectiveCamera makeDefault position={[4.8, 2.1, -6.4]} fov={40} />
 

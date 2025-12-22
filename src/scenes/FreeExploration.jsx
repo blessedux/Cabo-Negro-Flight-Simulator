@@ -15,7 +15,7 @@ import { initializeHeightmap } from "../terrainHeightSampler";
 
 export function Scene2({ textureRotation = 0 }) {
   // textureRotation prop kept for compatibility but defaults to 0
-  const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
+  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
   
   // Initialize terrain height sampler
   useEffect(() => {
@@ -28,7 +28,7 @@ export function Scene2({ textureRotation = 0 }) {
     <>
       <FreeCameraDragControls />
       <SphereEnv />
-      <Environment background={false} files={"assets/textures/envmap.hdr"} />
+      <Environment background={false} files={"/assets/textures/envmap.hdr"} />
 
       <PerspectiveCamera makeDefault position={[0, 8, 8]} fov={60} />
 

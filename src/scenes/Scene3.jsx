@@ -20,7 +20,7 @@ import { getCurrentExploreScene, subscribeToExploreScene } from "../SceneNavigat
 
 export function Scene3({ textureRotation = 0 }) {
   // Scene 3: Satellite View - Global position
-  const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
+  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
   const terrainRef = useRef();
   
   // Initialize terrain height sampler
@@ -56,7 +56,7 @@ export function Scene3({ textureRotation = 0 }) {
       <CameraAnimator />
       <CameraPositionLogger />
       <SphereEnv />
-      <Environment background={false} files={"assets/textures/envmap.hdr"} />
+      <Environment background={false} files={"/assets/textures/envmap.hdr"} />
 
       <PerspectiveCamera makeDefault position={[0.0, 35.0, 0.0]} fov={35} />
 

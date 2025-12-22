@@ -2,7 +2,7 @@ import { useTexture } from "@react-three/drei";
 import { BackSide, SRGBColorSpace } from "three";
 
 export function SphereEnv() {
-  const map = useTexture("assets/textures/envmap.jpg");
+  const map = useTexture("/assets/textures/envmap.jpg");
   
   // Fix deprecation: use colorSpace instead of encoding
   if (map) {

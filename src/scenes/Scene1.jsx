@@ -20,7 +20,7 @@ import { getCurrentExploreScene, subscribeToExploreScene } from "../SceneNavigat
 
 export function Scene1({ textureRotation = 0 }) {
   // Scene 1: Cabo Negro Terrain - Orbit around terrain
-  const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
+  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
   const terrainRef = useRef();
   
   // Initialize terrain height sampler
@@ -56,7 +56,7 @@ export function Scene1({ textureRotation = 0 }) {
       <CameraAnimator />
       <CameraPositionLogger />
       <SphereEnv />
-      <Environment background={false} files={"assets/textures/envmap.hdr"} />
+      <Environment background={false} files={"/assets/textures/envmap.hdr"} />
 
       <PerspectiveCamera makeDefault position={[0, 3.5, 6.5]} fov={40} />
 

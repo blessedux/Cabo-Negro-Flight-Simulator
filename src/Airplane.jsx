@@ -396,4 +396,4 @@ export function Airplane(props) {
   )
 }
 
-useGLTF.preload('assets/models/airplane_black.glb');
+useGLTF.preload('/assets/models/airplane_black.glb');

@@ -9,11 +9,11 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
   const [heightExaggeration, setHeightExaggeration] = useState(getHeightExaggeration());
   
   // Load the GLB model
-  const { scene } = useGLTF("assets/models/terrain-tiles.glb");
+  const { scene } = useGLTF("/assets/models/terrain-tiles.glb");
   
   // Load both textures
-  const terrainTexture = useTexture("assets/textures/terrain-texture.png");
-  const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
+  const terrainTexture = useTexture("/assets/textures/terrain-texture.png");
+  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
   
   // Listen for height exaggeration changes
   useEffect(() => {
@@ -369,4 +369,4 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
   );
 });
 
-useGLTF.preload("assets/models/terrain-tiles.glb");
+useGLTF.preload("/assets/models/terrain-tiles.glb");

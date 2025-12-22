@@ -33,7 +33,7 @@ export function LocationBeam() {
   const sceneZ = -offsetNorthMeters * sceneScale; // Negative because north = negative Z
   
   // Load heightmap to sample terrain height
-  const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
+  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
   const [terrainHeight, setTerrainHeight] = useState(0);
   
   // Calculate terrain height at beam position

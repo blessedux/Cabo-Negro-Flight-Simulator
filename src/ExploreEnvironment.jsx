@@ -160,7 +160,7 @@ function WindTurbineInstance({ scene, position, scale, index }) {
 // Wind Turbines for Scene 6 (4 turbines total)
 function WindTurbineModel({ currentScene }) {
   // Hooks must ALWAYS be called in the same order - call them unconditionally
-  const { scene } = useGLTF("assets/models/wind_turbine.glb");
+  const { scene } = useGLTF("/assets/models/wind_turbine.glb");
   
   // Scale: half of current size (0.0025 / 2 = 0.00125)
   const turbineScale = 0.00125;
@@ -219,7 +219,7 @@ function WindTurbineModel({ currentScene }) {
 
 // Server Room Model for Scene 7
 function ServerRoomModel({ currentScene, dataCenterModalOpenRef, dataCenterCameraPositionRef }) {
-  const { scene } = useGLTF("assets/models/Server_Room.glb");
+  const { scene } = useGLTF("/assets/models/Server_Room.glb");
   const groupRef = useRef();
   const clonedSceneRef = useRef(null);
   const ceilingMeshRef = useRef(null);
@@ -552,7 +552,7 @@ function ExploreModels({ currentScene }) {
 
 // Terrain 3D component for Scene 6
 function Terrain3D({ terrainRef }) {
-  const { scene } = useGLTF("assets/textures/terrain-3d.glb");
+  const { scene } = useGLTF("/assets/textures/terrain-3d.glb");
   const groupRef = useRef();
   
   // Debug logging and visibility fixes
@@ -670,7 +670,7 @@ function Terrain3D({ terrainRef }) {
 }
 
 export function ExploreEnvironment({ textureRotation = 0 }) {
-  const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
+  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
   const terrainRef = useRef();
   const [currentScene, setCurrentScene] = useState(getCurrentExploreScene());
   const dataCenterModalOpenRef = useRef(false);
@@ -765,7 +765,7 @@ export function ExploreEnvironment({ textureRotation = 0 }) {
       
       {/* Environment */}
       <SphereEnv />
-      <Environment background={false} files={"assets/textures/envmap.hdr"} />
+      <Environment background={false} files={"/assets/textures/envmap.hdr"} />
       
       {/* Camera - position will be controlled by CinematicCameraController */}
       {/* Initial position matches Scene 1, but will be overridden by CinematicCameraController */}
@@ -869,7 +869,7 @@ export function ExploreEnvironment({ textureRotation = 0 }) {
 // useGLTF.preload("assets/models/ships.glb");
 // useGLTF.preload("assets/models/wind-turbines.glb");
 // useGLTF.preload("assets/models/data-center.glb");
-useGLTF.preload("assets/textures/terrain-3d.glb");
-useGLTF.preload("assets/models/wind_turbine.glb");
-useGLTF.preload("assets/models/Server_Room.glb");
+useGLTF.preload("/assets/textures/terrain-3d.glb");
+useGLTF.preload("/assets/models/wind_turbine.glb");
+useGLTF.preload("/assets/models/Server_Room.glb");
 
