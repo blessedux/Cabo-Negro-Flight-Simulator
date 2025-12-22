@@ -32,7 +32,11 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!assets|.*\\.(js|css|png|jpg|jpeg|gif|svg|glb|hdr|webp|json|woff|woff2|ttf|eot)).*)",
+      "source": "/assets/:path*",
+      "destination": "/assets/:path*"
+    },
+    {
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
