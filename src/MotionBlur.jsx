@@ -2,6 +2,7 @@ import React, { forwardRef, useMemo } from 'react';
 import { Uniform } from 'three';
 import { Effect } from 'postprocessing';
 import { turbo } from './controls';
+import { getTransitionMotionBlurStrength, isTransitioningState } from './CinematicCameraController';
 
 // from:
 // https://docs.pmnd.rs/react-postprocessing/effects/custom-effects
@@ -43,7 +44,9 @@ class MotionBlurImpl extends Effect {
   }
 
   update(renderer, inputBuffer, deltaTime) {
-    this.uniforms.get('strength').value = turbo;
+    // Use transition motion blur during scene transitions, otherwise use turbo from flight
+    const transitionBlur = isTransitioningState() ? getTransitionMotionBlurStrength() : 0;
+    this.uniforms.get('strength').value = Math.max(turbo, transitionBlur);
   }
 }
 

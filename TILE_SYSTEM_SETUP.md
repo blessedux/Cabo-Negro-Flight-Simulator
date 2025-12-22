@@ -147,3 +147,4 @@ This lets you test the navigation system before uploading tiles.
 - Check CDN performance
 - Consider image compression
 - Use WebP format if supported
+

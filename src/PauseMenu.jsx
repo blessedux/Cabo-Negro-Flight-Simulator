@@ -153,6 +153,43 @@ export function PauseMenu() {
           />
         </div>
 
+        {/* Attribution */}
+        <div
+          style={{
+            marginBottom: '20px',
+            paddingTop: '16px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+            textAlign: 'center',
+          }}
+        >
+          <div
+            style={{
+              color: '#aaa',
+              fontSize: '11px',
+              lineHeight: '1.4',
+            }}
+          >
+            <a
+              href="https://www.esri.com/en-us/arcgis/products/arcgis-online/imagery"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: '#aaa',
+                textDecoration: 'none',
+                transition: 'color 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.color = '#fff';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.color = '#aaa';
+              }}
+            >
+              © ESRI World Imagery
+            </a>
+          </div>
+        </div>
+
         {/* Back to Landing Page Button */}
         <button
           onClick={handleBackToLanding}

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { getCameraData } from './FreeCameraDragControls';
+import { getCameraData, setCameraFov, getCameraFov } from './FreeCameraDragControls';
 
 export function CameraPositionLoggerUI() {
   const [position, setPosition] = useState({ x: 0, y: 0, z: 0 });
   const [rotation, setRotation] = useState({ pitch: 0, yaw: 0, roll: 0 });
+  const [fov, setFov] = useState(getCameraFov());
 
   useEffect(() => {
     const updateUI = () => {
@@ -63,6 +64,38 @@ export function CameraPositionLoggerUI() {
           Roll: {rotation.roll}
         </div>
       </div>
+      
+      {/* Camera Scale (FOV) Slider */}
+      <div style={{ marginBottom: '15px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+        <div style={{ color: '#aaa', marginBottom: '8px', fontSize: '11px' }}>
+          Camera Scale (FOV): {fov.toFixed(1)}°
+        </div>
+        <input
+          type="range"
+          min="10"
+          max="80"
+          value={fov}
+          step="1"
+          onChange={(e) => {
+            const newFov = parseFloat(e.target.value);
+            setFov(newFov);
+            setCameraFov(newFov);
+          }}
+          style={{
+            width: '100%',
+            height: '6px',
+            borderRadius: '3px',
+            background: 'rgba(255, 255, 255, 0.1)',
+            outline: 'none',
+            cursor: 'pointer',
+          }}
+        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#666', marginTop: '4px' }}>
+          <span>Zoomed In (Bigger)</span>
+          <span>Zoomed Out (Wider)</span>
+        </div>
+      </div>
+      
       <button
         onClick={copyToClipboard}
         style={{

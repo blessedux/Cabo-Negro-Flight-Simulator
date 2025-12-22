@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Raycaster, Vector3 } from 'three';
+import { Raycaster, Vector3, Matrix4, Quaternion, Euler } from 'three';
+import * as THREE from 'three';
 import { setCameraTarget } from './CameraAnimator';
 import { sampleTerrainHeight } from './terrainHeightSampler';
 import { setOrbitPaused } from './controls';
@@ -16,6 +17,8 @@ export function ClickableTerrainTile({
   ctaUrl = '#',
   tagText = 'Click Me',
   squareSize = 0.2, // Size of the clickable square (default 0.2)
+  imageUrl = null, // Optional image URL to display in modal
+  imageLink = null, // Optional link URL when image is clicked
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
@@ -97,13 +100,43 @@ export function ClickableTerrainTile({
     if (cameraTarget) {
       setIsClicked(true);
       setOrbitPaused(true); // Stop orbit animation when tile is clicked
-      setCameraTarget(cameraTarget.position, cameraTarget.rotation);
+      
+      // Use tile position as lookAtTarget for straight-line camera movement
+      const lookAtPos = tagPosition ? [tagPosition.x, tagPosition.y, tagPosition.z] : null;
+      
+      // Calculate final rotation using lookAt method to ensure smooth transition
+      // This prevents any rotation jump when animation completes
+      let finalRotation = cameraTarget.rotation;
+      if (lookAtPos) {
+        const tempCamPos = new Vector3(...cameraTarget.position);
+        const tempLookAtPos = new Vector3(...lookAtPos);
+        const tempLookAtMatrix = new Matrix4();
+        tempLookAtMatrix.lookAt(tempCamPos, tempLookAtPos, new Vector3(0, 1, 0));
+        const tempQuat = new Quaternion().setFromRotationMatrix(tempLookAtMatrix);
+        const tempEuler = new Euler().setFromQuaternion(tempQuat, 'YXZ');
+        
+        finalRotation = {
+          pitch: tempEuler.x,
+          yaw: tempEuler.y,
+          roll: tempEuler.z
+        };
+      }
+      
+      setCameraTarget(
+        cameraTarget.position, 
+        finalRotation,
+        1500, // Default duration
+        lookAtPos // Look at the tile during movement
+      );
+      
       // Open modal outside Canvas
       setTileModalOpen(true, {
         title,
         paragraph,
         ctaText,
         ctaUrl,
+        imageUrl,
+        imageLink,
       });
     }
   };

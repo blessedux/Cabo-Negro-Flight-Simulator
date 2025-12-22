@@ -34,18 +34,19 @@ export const CINEMATIC_SCENES = {
     name: "Punta Arenas Context",
     purpose: "Geographic & human scale",
     camera: {
-      position: [-12.0, 4.2, 9.0],
-      rotation: { pitch: -0.42, yaw: -2.2, roll: 0 },
+      position: [0.052, 0.425, -0.934],
+      rotation: { pitch: -0.6844, yaw: -3.0242, roll: 0 },
       fov: 40
     },
     movement: {
-      type: 'pan',
-      direction: 'leftToRight',
-      yawStart: -2.2,
-      yawEnd: -1.6,
-      speed: 0.012,
-      duration: 11000, // 10-12s average
-      easing: 'linear'
+      type: 'pullBack',
+      axis: 'vertical',
+      startY: 0.425, // Start at new altitude
+      endY: 4.2, // Smoothly rise to higher altitude
+      speed: 0.015,
+      duration: 20000, // 20 seconds for slower, smoother ascent
+      easing: 'easeInOutSine',
+      lookAtCenter: true // Always look at center while moving
     },
     text: {
       title: "Punta Arenas",
@@ -85,55 +86,60 @@ export const CINEMATIC_SCENES = {
     }
   },
   4: {
-    name: "Maritime Terminal",
-    purpose: "Infrastructure anchor",
+    name: "Global Trade Route",
+    purpose: "Maritime trade and Panama Canal alternative",
     camera: {
-      position: [4.8, 2.1, -6.4],
-      rotation: { pitch: -0.32, yaw: 0.85, roll: 0 },
-      fov: 40
+      position: [-8.227, 0.24, 2.612], // Starting position
+      rotation: { pitch: -0.3023, yaw: -0.5289, roll: 0 }, // Starting rotation
+      fov: 27
     },
     movement: {
-      type: 'dolly',
-      direction: 'forward',
-      distance: 1.5,
-      yawStart: 0.85,
-      yawEnd: 0.65,
-      speed: 0.02,
-      duration: 11000, // 10-12s average
-      easing: 'easeInOutSine'
+      type: 'keyframePan',
+      keyframes: [
+        {
+          position: [-8.227, 0.24, 2.612],
+          rotation: { pitch: -0.3023, yaw: -0.5289, roll: 0 }
+        },
+        {
+          position: [-10.942, 1.37, 5.16],
+          rotation: { pitch: -0.2796, yaw: -0.8471, roll: 0 }
+        }
+      ],
+      duration: 20000, // 20 seconds for smooth transition
+      easing: 'easeInOutSine',
+      loop: false
     },
     text: {
-      title: "Maritime Terminal",
-      subtitle: "A protected port for regional and global operations"
+      title: "Global Trade Routes",
+      subtitle: "An efficient alternative to the Panama Canal, offering new opportunities for cargo ships and maritime routes"
     },
     visualCues: {
-      dockOutlines: true,
-      shipSilhouettes: true,
-      waterReflections: true
-    },
-    models: {
-      terminal: "assets/models/maritime-terminal.glb",
-      ships: "assets/models/ships.glb"
+      maritimeView: true,
+      cargoShips: true,
+      terrainVisible: true
     }
   },
   5: {
-    name: "Wind Energy Potential",
+    name: "Maritime Port Potential",
     purpose: "Motion, sustainability, power",
     camera: {
-      position: [-6.2, 3.0, 2.5],
-      rotation: { pitch: -0.38, yaw: -0.9, roll: 0 },
-      fov: 42
+      position: [0.651, 0.185, 0.658],
+      rotation: { pitch: -0.2446, yaw: 1.4952, roll: 0 },
+      fov: 49
     },
     movement: {
-      type: 'tracking',
-      direction: 'rightToLeft',
-      speed: 0.018,
-      duration: 10000, // 9-11s average
-      easing: 'linear'
+      type: 'orbit',
+      center: [0, 0, 0], // Orbit around origin/beam
+      radiusStart: 0.926, // Distance from center (sqrt(0.651^2 + 0.658^2))
+      radiusEnd: 0.926, // Keep same radius for smooth orbit
+      speed: 0.008, // Slow orbit speed for smooth movement
+      duration: 20000, // 20 seconds
+      easing: 'easeInOutSine',
+      direction: 'clockwise'
     },
     text: {
-      title: "Wind Energy Potential",
-      subtitle: "Local power for long-term infrastructure"
+      title: "Maritime Port Potential",
+      subtitle: "Strategic coastal infrastructure for global trade"
     },
     visualCues: {
       windLines: true,
@@ -146,19 +152,76 @@ export const CINEMATIC_SCENES = {
     }
   },
   6: {
+    name: "Wind Energy",
+    purpose: "Wind turbine close-up view",
+    camera: {
+      position: [0.344, 0.061, 0.296], // Starting position
+      rotation: { pitch: 0.1461, yaw: 2.7192, roll: 0 }, // Starting rotation
+      fov: 18 // Starting FOV
+    },
+    movement: {
+      type: 'keyframePan',
+      keyframes: [
+        {
+          position: [0.344, 0.061, 0.296],
+          rotation: { pitch: 0.1461, yaw: 2.7192, roll: 0 },
+          fov: 18
+        },
+        {
+          position: [0.535, 0.275, 0.18],
+          rotation: { pitch: -0.3854, yaw: 2.1985, roll: 0 },
+          fov: 31
+        }
+      ],
+      duration: 20000, // 20 seconds for smooth transition
+      easing: 'easeInOutSine',
+      loop: false
+    },
+    text: {
+      title: "Wind Energy Investment Opportunity",
+      subtitle: "50%+ capacity factors, 300+ windy days annually, and permits in place. High profitability with faster payback periods."
+    },
+    visualCues: {
+      turbines: true,
+      naturalLight: true,
+      closeUp: true
+    },
+    models: {
+      turbine: "assets/models/wind_turbine.glb"
+    }
+  },
+  7: {
     name: "Data Center Potential",
     purpose: "Precision, future value, silence",
     camera: {
-      position: [2.4, 2.2, 4.1],
-      rotation: { pitch: -0.28, yaw: -2.6, roll: 0 },
+      position: [2.428, 2.223, 4.111], // Starting position
+      rotation: { pitch: -0.255, yaw: -0.005, roll: 0 }, // Starting rotation
       fov: 38
     },
     movement: {
-      type: 'staticHold',
-      drift: 0.05,
-      speed: 0.005,
-      duration: 11000, // 10-12s average
-      easing: 'easeInOutSine'
+      type: 'keyframePan',
+      keyframes: [
+        {
+          position: [2.428, 2.223, 4.111],
+          rotation: { pitch: -0.255, yaw: -0.005, roll: 0 }
+        },
+        {
+          position: [2.428, 2.223, 4.111],
+          rotation: { pitch: -0.255, yaw: 0.3, roll: 0 } // Pan left (increase yaw) - happens in first 3 seconds
+        },
+        {
+          position: [0.002, 0.05, 0.519],
+          rotation: { pitch: -0.8815, yaw: 1.5609, roll: 0 } // Cut to data center position at 3 seconds
+        },
+        {
+          position: [0.002, 0.05, 0.519],
+          rotation: { pitch: -0.8815, yaw: 1.5609, roll: 0 } // Hold at data center position
+        }
+      ],
+      duration: 15000, // 15 seconds total
+      // Keyframe timing: 0-20% (0-3s): pan left, 20-25% (3-3.75s): cut transition, 25-100% (3.75-15s): hold
+      easing: 'easeInOutSine',
+      loop: false
     },
     text: {
       title: "Data Center Potential",
@@ -173,21 +236,31 @@ export const CINEMATIC_SCENES = {
       dataCenter: "assets/models/data-center.glb"
     }
   },
-  7: {
+  8: {
     name: "Synthesis / Investable Land",
     purpose: "Mental closure & conviction",
     camera: {
-      position: [0.0, 6.5, 10.0],
-      rotation: { pitch: -0.6, yaw: 3.14, roll: 0 },
-      fov: 40
+      position: [4.012, 2.63, 8.023], // Starting position
+      rotation: { pitch: -0.405, yaw: 6.61, roll: 0 }, // Starting rotation
+      fov: 68 // Starting FOV
     },
     movement: {
-      type: 'pullBackRise',
-      pullBackDistance: 2.0,
-      riseDistance: 1.5,
-      speed: 0.015,
-      duration: 13500, // 12-15s average
-      easing: 'easeInOutSine'
+      type: 'keyframePan',
+      keyframes: [
+        {
+          position: [4.012, 2.63, 8.023],
+          rotation: { pitch: -0.405, yaw: 6.61, roll: 0 },
+          fov: 68
+        },
+        {
+          position: [4.012, 2.63, 8.023],
+          rotation: { pitch: -0.405, yaw: 6.61, roll: 0 },
+          fov: 28
+        }
+      ],
+      duration: 20000, // 20 seconds for smooth FOV transition
+      easing: 'easeInOutSine',
+      loop: false
     },
     text: {
       title: "From land to infrastructure",

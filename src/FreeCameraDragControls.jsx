@@ -6,6 +6,11 @@ import { controls, isMenuOpen, isPaused, isOrbitPaused } from './controls';
 import { getCameraAnimationState } from './CameraAnimator';
 import { beamPosition, beamHeight } from './LocationBeam';
 import { sampleTerrainHeight } from './terrainHeightSampler';
+import { isCinematicMode } from './CinematicCameraController';
+import { getFreeExplorationMode } from './FreeExplorationMode';
+
+// Constants for satellite follow mode
+const SPHERE_CENTER = new Vector3(0, 0, 0);
 
 // Export camera data for UI components outside Canvas
 export let cameraData = {
@@ -28,6 +33,87 @@ export function setOrbitSpeed(speed) {
   if (orbitSpeedRefGlobal) {
     orbitSpeedRefGlobal.current = speed * maxSpeed;
   }
+}
+
+// Export FOV control (for camera zoom/scale)
+let cameraFovGlobal = 40; // Default FOV (degrees)
+export function setCameraFov(fov) {
+  // FOV range: 10 (zoomed in, everything looks bigger) to 80 (wide angle)
+  cameraFovGlobal = Math.max(10, Math.min(80, fov));
+}
+export function getCameraFov() {
+  return cameraFovGlobal;
+}
+
+// Cargo ship orbit mode
+let cargoShipOrbitMode = null;
+let cargoShipOrbitStartTime = null;
+let cargoShipOrbitStartAngle = null;
+
+export function setCargoShipOrbitMode(config) {
+  cargoShipOrbitMode = config;
+  cargoShipOrbitStartTime = Date.now();
+  
+  // Calculate starting angle from camera position to center
+  const startPos = new Vector3(...config.startPosition);
+  const center = new Vector3(...config.center);
+  const offset = startPos.clone().sub(center);
+  cargoShipOrbitStartAngle = Math.atan2(offset.z, offset.x);
+}
+
+export function stopCargoShipOrbitMode() {
+  cargoShipOrbitMode = null;
+  cargoShipOrbitStartTime = null;
+  cargoShipOrbitStartAngle = null;
+}
+
+// Satellite follow mode
+let satelliteFollowMode = null;
+let satelliteFollowRef = null; // Reference to the satellite's ref
+let satelliteOrbitParams = null; // Store orbital parameters to follow the same orbit
+let satelliteFollowStartTime = null; // Track when follow mode started for time synchronization
+let satelliteInitialPhase = null; // Store initial orbital phase to sync with satellite's current position
+
+export function setSatelliteFollowMode(satelliteRef, orbitParams) {
+  satelliteFollowMode = true;
+  satelliteFollowRef = satelliteRef;
+  satelliteOrbitParams = orbitParams; // Store orbital parameters
+  
+  // Get satellite's current position to calculate its current orbital phase
+  // This ensures we start following from the satellite's current position in its orbit
+  if (satelliteRef && satelliteRef.current) {
+    const satellitePos = new Vector3();
+    satelliteRef.current.getWorldPosition(satellitePos);
+    
+    // Calculate current orbital angle from satellite's position
+    // Reverse the orbital calculation to find the angle
+    const { orbitalPlane, inclination, radius } = orbitParams;
+    
+    // Rotate position back to orbital plane coordinates
+    const cosPlane = Math.cos(orbitalPlane);
+    const sinPlane = Math.sin(orbitalPlane);
+    const orbitX = satellitePos.x * cosPlane + satellitePos.z * sinPlane;
+    const orbitZ = -satellitePos.x * sinPlane + satellitePos.z * cosPlane;
+    
+    // Calculate angle from orbital plane coordinates
+    // atan2 gives us the angle, but we need to account for inclination
+    const orbitalAngle = Math.atan2(orbitZ / Math.cos(inclination), orbitX);
+    
+    // Store the initial phase offset to sync with satellite's current position
+    satelliteInitialPhase = orbitalAngle;
+    satelliteFollowStartTime = Date.now() / 1000; // Store start time in seconds
+  } else {
+    satelliteFollowStartTime = Date.now() / 1000;
+    satelliteInitialPhase = orbitParams.phaseOffset; // Fallback to original phaseOffset
+  }
+}
+
+export function stopSatelliteFollowMode() {
+  satelliteFollowMode = null;
+  satelliteFollowRef = null;
+  satelliteOrbitParams = null;
+  satelliteFollowStartTime = null;
+  satelliteInitialPhase = null;
 }
 
 export function FreeCameraDragControls() {
@@ -76,11 +162,27 @@ export function FreeCameraDragControls() {
   const returnToDefaultSpeed = 0.05; // Speed of returning to default view (0-1)
   const userInteractionTimeout = 2.0; // Seconds before returning to default view
   
+  // Mouse position tracking for camera rotation
+  const mouseX = useRef(0); // Normalized mouse X position (-1 to 1, center = 0)
+  const mouseY = useRef(0); // Normalized mouse Y position (-1 to 1, center = 0)
+  const mouseDistanceFromCenter = useRef(0); // Distance from center (0 to 1)
+  const mouseRotationInfluence = 0.25; // How much mouse position affects rotation (more exaggerated)
+  const maxMouseRotation = 0.15; // Maximum rotation offset in radians (~8.6 degrees) - more movement
+  
   // Mouse drag handlers
   useEffect(() => {
     const handleMouseDown = (e) => {
       // Don't allow dragging when menu is open
       if (isMenuOpen) return;
+      
+      // Stop cargo ship orbit if active (user is clicking/dragging)
+      if (cargoShipOrbitMode) {
+        stopCargoShipOrbitMode();
+      }
+      // Stop satellite follow if active (user is clicking/dragging)
+      if (satelliteFollowMode) {
+        stopSatelliteFollowMode();
+      }
       
       // Only start dragging on left mouse button
       if (e.button === 0) {
@@ -103,7 +205,7 @@ export function FreeCameraDragControls() {
         return;
       }
       
-      // Only process movement if mouse button is actually down
+      // Only process dragging if mouse button is actually down
       if (!isMouseDown.current) return;
       
       // Check if mouse has moved enough to start dragging (threshold to allow clicks)
@@ -116,6 +218,15 @@ export function FreeCameraDragControls() {
           isDragging.current = true;
           hasMoved.current = true;
           document.body.style.cursor = 'grabbing';
+          
+          // Stop cargo ship orbit when user starts dragging
+          if (cargoShipOrbitMode) {
+            stopCargoShipOrbitMode();
+          }
+          // Stop satellite follow when user starts dragging
+          if (satelliteFollowMode) {
+            stopSatelliteFollowMode();
+          }
         }
       }
       
@@ -152,15 +263,36 @@ export function FreeCameraDragControls() {
       document.body.style.cursor = '';
     };
 
+    // Track mouse position continuously (even when not dragging)
+    const handleMouseMoveGlobal = (e) => {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      
+      // Calculate distance from center (0 to 1, where 1 is at corner)
+      const deltaX = e.clientX - centerX;
+      const deltaY = e.clientY - centerY;
+      const maxDistance = Math.sqrt(centerX * centerX + centerY * centerY);
+      const distanceFromCenter = Math.sqrt(deltaX * deltaX + deltaY * deltaY) / maxDistance;
+      
+      // Normalize to -1 to 1 range (center = 0)
+      mouseX.current = deltaX / centerX;
+      mouseY.current = deltaY / centerY;
+      
+      // Store distance for speed ramping (0 = center, 1 = corner)
+      mouseDistanceFromCenter.current = Math.min(1, distanceFromCenter);
+    };
+
     // Add event listeners
     window.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMoveGlobal); // Track mouse position always
     window.addEventListener('mouseup', handleMouseUp);
 
     // Cleanup
     return () => {
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousemove', handleMouseMoveGlobal);
       window.removeEventListener('mouseup', handleMouseUp);
       document.body.style.cursor = '';
     };
@@ -168,8 +300,125 @@ export function FreeCameraDragControls() {
   
   // Apply rotation and movement each frame
   useFrame((state, delta) => {
-    // Don't update if menu is open or paused
-    if (isMenuOpen || isPaused) return;
+    // Don't update if menu is open, paused, or cinematic mode is active
+    // But allow updates in free exploration mode
+    const isFreeMode = getFreeExplorationMode();
+    if (isMenuOpen || isPaused || (!isFreeMode && isCinematicMode())) return;
+    
+    // Handle cargo ship orbit mode
+    if (cargoShipOrbitMode && cargoShipOrbitStartTime !== null) {
+      const center = new Vector3(...cargoShipOrbitMode.center);
+      const orbitSpeed = 0.008; // Slow orbit speed
+      const direction = cargoShipOrbitMode.direction === 'counterclockwise' ? -1 : 1;
+      
+      // Calculate elapsed time
+      const elapsed = (Date.now() - cargoShipOrbitStartTime) / 1000; // Convert to seconds
+      
+      // Smooth transition: for first 0.5 seconds, gradually start the orbit to avoid sudden movement
+      const transitionDuration = 0.5; // 0.5 seconds transition
+      const transitionProgress = Math.min(elapsed / transitionDuration, 1);
+      const transitionEase = (t) => t * t * (3 - 2 * t); // Smoothstep easing
+      const easedTransition = transitionEase(transitionProgress);
+      
+      // Calculate current orbit angle (starting from initial angle)
+      // Start with 0 movement, gradually increase to full speed
+      const angleOffset = elapsed * orbitSpeed * direction * easedTransition;
+      const currentAngle = cargoShipOrbitStartAngle + angleOffset;
+      
+      // Calculate orbit position
+      const x = center.x + Math.cos(currentAngle) * cargoShipOrbitMode.radius;
+      const z = center.z + Math.sin(currentAngle) * cargoShipOrbitMode.radius;
+      const y = cargoShipOrbitMode.startPosition[1]; // Maintain Y height
+      
+      // Smoothly transition position from start to orbit position
+      const startPos = new Vector3(...cargoShipOrbitMode.startPosition);
+      const orbitPos = new Vector3(x, y, z);
+      camera.position.lerpVectors(startPos, orbitPos, easedTransition);
+      
+      // Look at center (cargo ship) - this will be smooth since we're already looking at it
+      camera.lookAt(center);
+      const euler = new Euler().setFromQuaternion(camera.quaternion, 'YXZ');
+      
+      // Update rotation state
+      rotation.current = { yaw: euler.y, pitch: euler.x };
+      
+      // Update exported camera data
+      cameraData.position = {
+        x: parseFloat(camera.position.x.toFixed(3)),
+        y: parseFloat(camera.position.y.toFixed(3)),
+        z: parseFloat(camera.position.z.toFixed(3)),
+      };
+      cameraData.rotation = {
+        pitch: parseFloat(euler.x.toFixed(4)),
+        yaw: parseFloat(euler.y.toFixed(4)),
+        roll: parseFloat(euler.z.toFixed(4)),
+      };
+      
+      return; // Don't apply normal movement during orbit
+    }
+    
+    // Handle satellite follow mode - calculate orbital position independently to ensure smooth orbit
+    if (satelliteFollowMode && satelliteOrbitParams && satelliteFollowStartTime !== null && satelliteInitialPhase !== null) {
+      const { orbitalPlane, inclination, speed, radius } = satelliteOrbitParams;
+      
+      // Calculate elapsed time since follow mode started
+      const currentTime = Date.now() / 1000; // Current time in seconds
+      const elapsedTime = currentTime - satelliteFollowStartTime;
+      
+      // Calculate orbital angle using the same formula as the satellite
+      // Start from the initial phase (where satellite was when follow started) and progress forward
+      const orbitalAngle = ((elapsedTime * speed) + satelliteInitialPhase) % (Math.PI * 2);
+      
+      // Calculate satellite position on orbital plane (same calculation as satellite component)
+      const orbitX = Math.cos(orbitalAngle) * radius;
+      const orbitY = Math.sin(orbitalAngle) * Math.sin(inclination) * radius;
+      const orbitZ = Math.sin(orbitalAngle) * Math.cos(inclination) * radius;
+      
+      // Rotate the orbital plane around Y axis
+      const cosPlane = Math.cos(orbitalPlane);
+      const sinPlane = Math.sin(orbitalPlane);
+      
+      // Apply rotation around Y axis
+      const x = orbitX * cosPlane - orbitZ * sinPlane;
+      const y = orbitY;
+      const z = orbitX * sinPlane + orbitZ * cosPlane;
+      
+      // Create satellite position vector
+      const satellitePos = new Vector3(x, y, z);
+      satellitePos.normalize().multiplyScalar(radius);
+      
+      // Calculate direction from satellite to center (satellite's forward direction)
+      const directionToCenter = SPHERE_CENTER.clone().sub(satellitePos).normalize();
+      
+      // Position camera behind satellite (offset by 1.5 units - closer for better framing)
+      // This keeps the satellite more in frame during orbital motion
+      const cameraOffset = directionToCenter.clone().multiplyScalar(-1.5);
+      const targetCameraPos = satellitePos.clone().add(cameraOffset);
+      
+      // Set camera position to follow the orbital path
+      camera.position.copy(targetCameraPos);
+      
+      // Always look at satellite to keep it in frame
+      camera.lookAt(satellitePos);
+      const euler = new Euler().setFromQuaternion(camera.quaternion, 'YXZ');
+      
+      // Update rotation state
+      rotation.current = { yaw: euler.y, pitch: euler.x };
+      
+      // Update exported camera data
+      cameraData.position = {
+        x: parseFloat(camera.position.x.toFixed(3)),
+        y: parseFloat(camera.position.y.toFixed(3)),
+        z: parseFloat(camera.position.z.toFixed(3)),
+      };
+      cameraData.rotation = {
+        pitch: parseFloat(euler.x.toFixed(4)),
+        yaw: parseFloat(euler.y.toFixed(4)),
+        roll: parseFloat(euler.z.toFixed(4)),
+      };
+      
+      return; // Don't apply normal movement during satellite follow
+    }
     
     // Check if camera is animating - if so, sync rotation from camera instead of applying
     const animState = getCameraAnimationState();
@@ -194,7 +443,33 @@ export function FreeCameraDragControls() {
     }
     
     // Apply rotation to camera using Euler angles
-    const euler = new Euler(rotation.current.pitch, rotation.current.yaw, 0, 'YXZ');
+    // Add mouse-based rotation offset when not dragging with speed ramping
+    let finalPitch = rotation.current.pitch;
+    let finalYaw = rotation.current.yaw;
+    
+    if (!isDragging.current && !isMenuOpen && !isPaused) {
+      // Calculate speed ramp: faster at center (distance = 0), slower at corners (distance = 1)
+      // Use easeOutQuad for smooth deceleration: 1 at center, 0 at corners
+      const distance = mouseDistanceFromCenter.current;
+      const speedRamp = 1 - (distance * distance); // Quadratic ease-out: 1 at center, 0 at corners
+      
+      // Apply mouse-based rotation offset with speed ramping
+      // Mouse X controls yaw (horizontal rotation) - REVERSED direction
+      // Mouse Y controls pitch (vertical rotation)
+      // Speed ramping: full influence at center, reduced at edges
+      const baseYawOffset = -mouseX.current * maxMouseRotation * mouseRotationInfluence; // Reversed (negative)
+      const basePitchOffset = -mouseY.current * maxMouseRotation * mouseRotationInfluence; // Negative for natural feel
+      
+      // Apply speed ramp to the offsets
+      const mouseYawOffset = baseYawOffset * speedRamp;
+      const mousePitchOffset = basePitchOffset * speedRamp;
+      
+      // Clamp the offsets to ensure they don't exceed limits
+      finalYaw += Math.max(-maxMouseRotation, Math.min(maxMouseRotation, mouseYawOffset));
+      finalPitch += Math.max(-maxMouseRotation, Math.min(maxMouseRotation, mousePitchOffset));
+    }
+    
+    const euler = new Euler(finalPitch, finalYaw, 0, 'YXZ');
     camera.quaternion.setFromEuler(euler);
     
     // Update exported camera data
@@ -261,112 +536,41 @@ export function FreeCameraDragControls() {
       camera.position.add(moveDirection);
     }
     
-    // Auto-orbit around the light beam (only X and Z, not Y - allow free vertical movement)
-    // Only apply orbit if not paused by spacebar
-    if (!isOrbitPaused) {
-      // Calculate current orbit speed (faster with shift key)
-      const currentOrbitSpeed = controls.shift ? orbitSpeedRef.current * orbitSpeedMultiplier : orbitSpeedRef.current;
-      
-      // Update orbit angle (smooth rotation using delta time)
-      orbitAngle.current += currentOrbitSpeed * delta;
-      
-      // Calculate current distance from beam
-      const cameraToBeam = new Vector3().subVectors(camera.position, beamPosition);
-      const currentDistance = Math.sqrt(cameraToBeam.x * cameraToBeam.x + cameraToBeam.z * cameraToBeam.z);
-      
-      // Only increase radius if user is not trying to get closer (current distance > orbit radius)
-      // This allows user to move closer without being pushed away
-      if (currentDistance > orbitRadius.current) {
-        // Gradually increase radius (move slowly further away) but respect minimum
-        orbitRadius.current = Math.max(minOrbitRadius, orbitRadius.current + radiusIncreaseRate * delta * 60);
-      } else {
-        // If user is closer than orbit radius, update orbit radius to match (but don't go below minimum)
-        orbitRadius.current = Math.max(minOrbitRadius, currentDistance);
-      }
-      
-      // Calculate desired orbit position around the beam (X and Z only, no Y influence)
-      const desiredX = beamPosition.x + Math.cos(orbitAngle.current) * orbitRadius.current;
-      const desiredZ = beamPosition.z + Math.sin(orbitAngle.current) * orbitRadius.current;
-      
-      // Only apply orbit influence if user is not actively trying to get closer
-      // Check if user is moving toward or away from beam
-      const desiredToBeam = new Vector3(desiredX - beamPosition.x, 0, desiredZ - beamPosition.z);
-      const cameraToBeamXZ = new Vector3(cameraToBeam.x, 0, cameraToBeam.z);
-      const isMovingTowardBeam = cameraToBeamXZ.length() < currentDistance * 0.98; // User getting closer
-      
-      // Smoothly interpolate camera position towards orbit position (X and Z only)
-      // Use lower influence if user is trying to get closer
-      const orbitInfluence = isMovingTowardBeam ? 0.005 : 0.015; // Less aggressive when user wants to get closer
-      const targetX = camera.position.x + (desiredX - camera.position.x) * orbitInfluence;
-      const targetZ = camera.position.z + (desiredZ - camera.position.z) * orbitInfluence;
-      
-      // Keep current Y position (no vertical pushback from orbit)
-      const targetY = camera.position.y;
-      
-      // Apply orbit position (X and Z only)
-      camera.position.set(targetX, targetY, targetZ);
-    }
+    // Auto-orbit rotation removed - user has full free exploration control
     
-    // Maximum altitude check: limit to terrain height + 30m
+    // Maximum altitude check: limit to terrain height + 6000m
     const terrainHeight = sampleTerrainHeight(camera.position.x, camera.position.z);
-    const maxAltitude = terrainHeight + 30; // 30 meters above terrain
+    const maxAltitude = terrainHeight + 60; // 60 units = 6000 meters above terrain (1 unit = 100m)
     if (camera.position.y > maxAltitude) {
       camera.position.y = maxAltitude;
     }
     
-    // Minimum altitude check: prevent going below Y=0.15
-    const minAltitude = 0.15;
+    // Minimum altitude check: prevent going below terrain + 5m (0.05 units)
+    // 0.05 units = 5 meters (sceneScale 0.01, so 1 unit = 100m)
+    const minHeightAboveTerrain = 0.05; // 5 meters above terrain
+    const minAltitude = terrainHeight + minHeightAboveTerrain;
     if (camera.position.y < minAltitude) {
       camera.position.y = minAltitude;
     }
     
-    // Check if user has interacted recently
-    // Don't return to default if orbit is paused (user wants free exploration)
-    const currentTime = performance.now() / 1000;
-    let shouldReturnToDefault = false;
-    
-    if (!isOrbitPaused) {
-      if (!hasUserInteracted.current) {
-        // If user hasn't interacted yet, always return to default (look at beam initially)
-        shouldReturnToDefault = true;
-      } else {
-        // If user has interacted, only return to default after timeout
-        const timeSinceLastInteraction = currentTime - lastUserInteractionTime.current;
-        shouldReturnToDefault = timeSinceLastInteraction > userInteractionTimeout;
-      }
+    // Adjust camera near plane to prevent seeing through terrain when looking down at minimum altitude
+    // Calculate distance from camera to terrain
+    const distanceToTerrain = camera.position.y - terrainHeight;
+    // Set near plane to be a small fraction of the distance to terrain, but not too small
+    // This prevents z-fighting and seeing through terrain
+    const optimalNear = Math.max(0.01, Math.min(0.1, distanceToTerrain * 0.1));
+    if (camera.near !== optimalNear) {
+      camera.near = optimalNear;
+      camera.updateProjectionMatrix();
     }
     
-    // Make camera smoothly return to looking at the base of the light beam
-    // Only if user hasn't interacted recently and orbit is not paused
-    if (shouldReturnToDefault) {
-      // Calculate base position (beamPosition is at center, base is at Y - beamHeight/2)
-      const beamBasePosition = new Vector3(
-        beamPosition.x,
-        beamPosition.y - beamHeight / 2,
-        beamPosition.z
-      );
-      
-      // Calculate direction to beam base to check if valid
-      const directionToBeam = new Vector3().subVectors(beamBasePosition, camera.position);
-      
-      // Only apply lookAt if we have a valid direction (not too close)
-      if (directionToBeam.length() > 0.1) {
-        // Calculate target quaternion that looks at the beam base
-        const targetQuaternion = new Quaternion();
-        const tempMatrix = new Matrix4();
-        tempMatrix.lookAt(camera.position, beamBasePosition, new Vector3(0, 1, 0));
-        targetQuaternion.setFromRotationMatrix(tempMatrix);
-        
-        // Smoothly interpolate toward looking at the beam
-        // Lower value = smoother return to default
-        camera.quaternion.slerp(targetQuaternion, returnToDefaultSpeed);
-        
-        // Sync rotation refs with the new camera rotation
-        const updatedEuler = new Euler().setFromQuaternion(camera.quaternion, 'YXZ');
-        rotation.current.yaw = updatedEuler.y;
-        rotation.current.pitch = updatedEuler.x;
-      }
+    // Update camera FOV from global control
+    if (camera.fov !== cameraFovGlobal) {
+      camera.fov = cameraFovGlobal;
+      camera.updateProjectionMatrix();
     }
+    
+    // Auto-orbit rotation removed - user has full free exploration control
   });
   
   return null; // This component doesn't render anything

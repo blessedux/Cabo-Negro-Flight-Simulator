@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { FlightScene } from "./FlightScene";
 import { ExploreScene } from "./ExploreScene";
+import { Terrain3DTest } from "./Terrain3DTest";
 import "./index.css";
 
 function Root() {
@@ -12,6 +13,7 @@ function Root() {
         <Route path="/" element={<Navigate to="/flight" replace />} />
         <Route path="/flight" element={<FlightScene />} />
         <Route path="/explore" element={<ExploreScene />} />
+        <Route path="/terrain-3d-test" element={<Terrain3DTest />} />
       </Routes>
     </BrowserRouter>
   );

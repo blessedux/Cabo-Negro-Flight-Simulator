@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, Suspense } from "react";
 import { PerspectiveCamera, Environment } from "@react-three/drei";
 import { EffectComposer, HueSaturation } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
@@ -12,15 +12,34 @@ import { CollisionDetector } from "../CollisionDetector";
 import { CameraPositionLogger } from "../CameraPositionLogger";
 import { CameraAnimator } from "../CameraAnimator";
 import { CinematicCameraController, startCinematicScene, isCinematicMode } from "../CinematicCameraController";
-import { ClickableTerrainTile } from "../ClickableTerrainTile";
 import { CoordinateRuler } from "../CoordinateRuler";
 import { useTexture } from "@react-three/drei";
 import { useRef } from "react";
 import { initializeHeightmap } from "../terrainHeightSampler";
 import { getCurrentExploreScene, subscribeToExploreScene } from "../SceneNavigator";
 
-export function Scene2({ textureRotation = 0 }) {
-  // Scene 2: Punta Arenas Context - Slow pan orbit
+// Synthesis Models - Combine all elements
+function SynthesisModels() {
+  // Load all models for synthesis view
+  // Placeholder - models will be loaded when available
+  // TODO: Uncomment when models are available
+  // const terminalModel = useGLTF("assets/models/maritime-terminal.glb");
+  // const turbinesModel = useGLTF("assets/models/wind-turbines.glb");
+  // const dataCenterModel = useGLTF("assets/models/data-center.glb");
+  // 
+  // return (
+  //   <group>
+  //     <primitive object={terminalModel.scene} />
+  //     <primitive object={turbinesModel.scene} />
+  //     <primitive object={dataCenterModel.scene} />
+  //   </group>
+  // );
+  
+  return null; // Models not available yet
+}
+
+export function Scene7({ textureRotation = 0 }) {
+  // Scene 7: Synthesis / Investable Land - Slow pull-back + rise
   const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
   const terrainRef = useRef();
   
@@ -35,8 +54,8 @@ export function Scene2({ textureRotation = 0 }) {
   useEffect(() => {
     const checkAndStart = () => {
       const currentScene = getCurrentExploreScene();
-      if (currentScene === 2) {
-        startCinematicScene(2);
+      if (currentScene === 7) {
+        startCinematicScene(7);
       }
     };
     
@@ -59,15 +78,19 @@ export function Scene2({ textureRotation = 0 }) {
       <SphereEnv />
       <Environment background={false} files={"assets/textures/envmap.hdr"} />
 
-      <PerspectiveCamera makeDefault position={[-12.0, 4.2, 9.0]} fov={40} />
+      <PerspectiveCamera makeDefault position={[0.0, 6.5, 10.0]} fov={40} />
 
       <MountainRoadLandscape ref={terrainRef} textureRotation={textureRotation} />
-      {/* Only show LocationBeam in cinematic mode (NOT free exploration) */}
-      {isCinematicMode() && <LocationBeam />}
+      
+      {/* Synthesis Models - All infrastructure visible */}
+      <Suspense fallback={null}>
+        <SynthesisModels />
+      </Suspense>
+      
+      <LocationBeam />
       <Compass />
       <CollisionDetector />
       
-      {/* Coordinate Ruler - helps visualize coordinate system */}
       <CoordinateRuler 
         centerX={0} 
         centerZ={0} 
@@ -75,24 +98,6 @@ export function Scene2({ textureRotation = 0 }) {
         markerSpacing={1} 
         showLabels={true} 
       />
-      
-      {/* Clickable terrain tile - only show in free exploration mode */}
-      {!isCinematicMode() && (
-        <ClickableTerrainTile
-        terrainGroupRef={terrainRef}
-        tilePosition={[0, 0.0009, -0.33]} // X, Z position - moved -5 tiles north (5 * 11.48 * 0.01 = 0.574, north is negative Z) - Y will be calculated from terrain height
-        squareSize={0.05} // 1/4 of original size (0.2 / 4 = 0.05)
-        cameraTarget={{
-          position: [-0.072, 0.68, -1.175],
-          rotation: { pitch: -0.6719, yaw: -2.876, roll: 0 }
-        }}
-        title="Placeholder Title"
-        paragraph="This is a placeholder paragraph. Replace this with your actual content. The camera will animate to the specified position and angle when this tile is clicked."
-        ctaText="Learn More"
-        ctaUrl="https://example.com"
-        tagText="Click Me"
-        />
-      )}
 
       <directionalLight
         castShadow
@@ -113,11 +118,16 @@ export function Scene2({ textureRotation = 0 }) {
       <EffectComposer>
         <MotionBlur />
         <HueSaturation
-          blendFunction={BlendFunction.NORMAL} // blend mode
-          hue={-0.15} // hue in radians
-          saturation={0.1} // saturation in radians
+          blendFunction={BlendFunction.NORMAL}
+          hue={-0.15}
+          saturation={0.1}
         />
       </EffectComposer>
     </>
   );
 }
+
+// Preload models (commented out until models are available)
+// useGLTF.preload("assets/models/maritime-terminal.glb");
+// useGLTF.preload("assets/models/wind-turbines.glb");
+// useGLTF.preload("assets/models/data-center.glb");

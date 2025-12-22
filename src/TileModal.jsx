@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { getCurrentExploreScene } from './SceneNavigator';
 
 // Global state for tile modal
 let tileModalState = {
@@ -7,17 +8,27 @@ let tileModalState = {
   paragraph: '',
   ctaText: '',
   ctaUrl: '#',
+  position: 'left', // 'left' or 'right'
+  imageUrl: null, // Optional image URL to display
+  imageLink: null, // Optional link URL when image is clicked
 };
 
 let tileModalCallbacks = [];
 
 export function setTileModalOpen(isOpen, data = {}) {
+  // Determine position based on current scene (Scene 2 = right, others = left)
+  const currentScene = getCurrentExploreScene();
+  const position = currentScene === 2 ? 'right' : (data.position || 'left');
+  
   tileModalState = {
     isOpen,
     title: data.title || '',
     paragraph: data.paragraph || '',
     ctaText: data.ctaText || '',
     ctaUrl: data.ctaUrl || '#',
+    position: position,
+    imageUrl: data.imageUrl || null,
+    imageLink: data.imageLink || null,
   };
   tileModalCallbacks.forEach(cb => cb(tileModalState));
   
@@ -75,9 +86,15 @@ export function TileModal() {
     }
   };
 
-  const modalWidth = '45vw'; // 45% of viewport width
+  const modalWidth = '30vw'; // 30% of viewport width (max on desktop)
   const modalHeight = '75vh'; // 3/4 of viewport height
-  const marginLeft = '80px'; // Increased left margin
+  const marginLeft = '80px'; // Left margin
+  const marginRight = '80px'; // Right margin
+  
+  // Determine position based on modal state
+  const isRightAligned = modalState.position === 'right';
+  const leftStyle = isRightAligned ? 'auto' : marginLeft;
+  const rightStyle = isRightAligned ? marginRight : 'auto';
 
   return (
     <div
@@ -93,12 +110,13 @@ export function TileModal() {
       }}
       onClick={handleClose}
     >
-      {/* Modal container - 45% width and 75% height, aligned left with glassmorphism background */}
+      {/* Modal container - 45% width and 75% height, aligned left or right with glassmorphism background */}
       <div
         style={{
           position: 'absolute',
           top: '50%',
-          left: marginLeft,
+          left: leftStyle,
+          right: rightStyle,
           transform: 'translateY(-50%)',
           width: modalWidth,
           height: modalHeight,
@@ -107,11 +125,12 @@ export function TileModal() {
           WebkitBackdropFilter: 'blur(20px)',
           border: '1px solid rgba(255, 255, 255, 0.15)',
           borderRadius: '12px',
-          padding: '30px 40px',
+          padding: '25px 35px',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
           display: 'flex',
           flexDirection: 'column',
           pointerEvents: 'auto',
+          overflowY: 'auto',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -157,10 +176,10 @@ export function TileModal() {
         <h1
           style={{
             color: '#ffffff',
-            fontSize: '36px',
+            fontSize: '32px',
             fontWeight: 'bold',
             margin: 0,
-            marginBottom: '20px',
+            marginBottom: '15px',
             textShadow: '2px 2px 8px rgba(0, 0, 0, 0.5)',
             pointerEvents: 'none',
           }}
@@ -168,13 +187,55 @@ export function TileModal() {
           {modalState.title}
         </h1>
 
+        {/* Image - displayed if provided */}
+        {modalState.imageUrl && (
+          <div
+            style={{
+              width: '100%',
+              marginBottom: '15px',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              cursor: modalState.imageLink ? 'pointer' : 'default',
+              transition: 'transform 0.2s',
+            }}
+            onClick={(e) => {
+              if (modalState.imageLink) {
+                e.stopPropagation();
+                window.open(modalState.imageLink, '_blank');
+              }
+            }}
+            onMouseEnter={(e) => {
+              if (modalState.imageLink) {
+                e.currentTarget.style.transform = 'scale(1.02)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (modalState.imageLink) {
+                e.currentTarget.style.transform = 'scale(1)';
+              }
+            }}
+          >
+            <img
+              src={modalState.imageUrl}
+              alt={modalState.title}
+              style={{
+                width: '100%',
+                height: 'auto',
+                display: 'block',
+                objectFit: 'cover',
+                borderRadius: '8px',
+              }}
+            />
+          </div>
+        )}
+
         {/* Paragraph and CTA button */}
         <div
           style={{
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'flex-end',
+            justifyContent: 'flex-start',
             gap: '20px',
           }}
         >
@@ -184,38 +245,42 @@ export function TileModal() {
               fontSize: '18px',
               fontWeight: '400',
               margin: 0,
-              lineHeight: '1.5',
+              lineHeight: '1.6',
               textShadow: '2px 2px 8px rgba(0, 0, 0, 0.5)',
             }}
           >
             {modalState.paragraph}
           </p>
-          <button
-            onClick={handleCTAClick}
-            style={{
-              padding: '12px 24px',
-              background: 'rgba(100, 150, 255, 0.9)',
-              border: '2px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '8px',
-              color: '#ffffff',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              transition: 'all 0.2s',
-              alignSelf: 'flex-start',
-              textShadow: '1px 1px 4px rgba(0, 0, 0, 0.3)',
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(100, 150, 255, 1)';
-              e.target.style.transform = 'scale(1.05)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(100, 150, 255, 0.9)';
-              e.target.style.transform = 'scale(1)';
-            }}
-          >
-            {modalState.ctaText}
-          </button>
+          
+          {/* Regular CTA button (show for all modals) */}
+          {modalState.ctaText && (
+            <button
+              onClick={handleCTAClick}
+              style={{
+                padding: '12px 24px',
+                background: 'rgba(100, 150, 255, 0.9)',
+                border: '2px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '8px',
+                color: '#ffffff',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                transition: 'all 0.2s',
+                alignSelf: 'flex-start',
+                textShadow: '1px 1px 4px rgba(0, 0, 0, 0.3)',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(100, 150, 255, 1)';
+                e.target.style.transform = 'scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(100, 150, 255, 0.9)';
+                e.target.style.transform = 'scale(1)';
+              }}
+            >
+              {modalState.ctaText}
+            </button>
+          )}
         </div>
       </div>
     </div>

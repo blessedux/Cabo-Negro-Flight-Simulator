@@ -27,3 +27,9 @@ src-0beqz/
 
 # Large texture files (stored locally, will be uploaded to CDN)
 public/assets/textures/terrain-texture.png
+
+# Test files and development tools
+public/*-test.html
+public/Untitled
+src/CargoShipEditor.jsx
+src/CargoShipFallback.jsx

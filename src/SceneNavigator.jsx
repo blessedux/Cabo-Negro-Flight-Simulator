@@ -1,16 +1,26 @@
 import React, { useState, useEffect } from 'react';
 
+import { startCinematicScene, stopCinematicScene } from './CinematicCameraController';
+
 // Global state for explore scene navigation
-let currentExploreScene = 1; // 1 = Default Orbit, 2 = Punta Arenas, 3 = Satellite
+let currentExploreScene = 1; // 1-8 cinematic scenes
 let sceneCallbacks = [];
+const TOTAL_SCENES = 8;
 
 export function getCurrentExploreScene() {
   return currentExploreScene;
 }
 
 export function setCurrentExploreScene(scene) {
-  currentExploreScene = scene;
-  sceneCallbacks.forEach(cb => cb(scene));
+  // Clamp scene to valid range
+  const clampedScene = Math.max(1, Math.min(TOTAL_SCENES, scene));
+  currentExploreScene = clampedScene;
+  
+  // Start new cinematic scene (camera reference is handled internally)
+  startCinematicScene(clampedScene);
+  
+  // Notify callbacks
+  sceneCallbacks.forEach(cb => cb(clampedScene));
 }
 
 export function subscribeToExploreScene(callback) {
@@ -21,9 +31,14 @@ export function subscribeToExploreScene(callback) {
 }
 
 const SCENE_NAMES = {
-  1: 'Default Orbit',
+  1: 'Cabo Negro Terrain',
   2: 'Punta Arenas',
-  3: 'Satellite',
+  3: 'Satellite View',
+  4: 'Global Trade Routes',
+  5: 'Maritime Terminal',
+  6: 'Wind Energy',
+  7: 'Data Center',
+  8: 'Synthesis',
 };
 
 export function SceneNavigator() {
@@ -37,12 +52,12 @@ export function SceneNavigator() {
   }, []);
 
   const handlePrevious = () => {
-    const newScene = currentScene <= 1 ? 3 : currentScene - 1;
+    const newScene = currentScene <= 1 ? TOTAL_SCENES : currentScene - 1;
     setCurrentExploreScene(newScene);
   };
 
   const handleNext = () => {
-    const newScene = currentScene >= 3 ? 1 : currentScene + 1;
+    const newScene = currentScene >= TOTAL_SCENES ? 1 : currentScene + 1;
     setCurrentExploreScene(newScene);
   };
 
@@ -70,9 +85,16 @@ export function SceneNavigator() {
           fontFamily: 'system-ui, -apple-system, sans-serif',
           backdropFilter: 'blur(10px)',
           border: '1px solid rgba(255, 255, 255, 0.2)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '4px',
         }}
       >
-        {SCENE_NAMES[currentScene]}
+        <div>{SCENE_NAMES[currentScene]}</div>
+        <div style={{ fontSize: '11px', opacity: 0.7 }}>
+          {currentScene} / {TOTAL_SCENES}
+        </div>
       </div>
 
       {/* Previous button */}

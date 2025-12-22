@@ -1,0 +1,14 @@
+{
+  "atlasConfig": {
+    "minX": 2333,
+    "maxX": 2633,
+    "minY": 5375,
+    "maxY": 5675,
+    "tileWidth": 4096,
+    "tileHeight": 4096,
+    "scale": 0.053156146179401995,
+    "needsScaling": true
+  },
+  "tileSize": 256,
+  "createdAt": "1765902976.164962"
+}

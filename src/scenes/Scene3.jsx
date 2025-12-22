@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { PerspectiveCamera, Environment } from "@react-three/drei";
 import { EffectComposer, HueSaturation } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
@@ -11,13 +11,15 @@ import { Compass } from "../Compass";
 import { CollisionDetector } from "../CollisionDetector";
 import { CameraPositionLogger } from "../CameraPositionLogger";
 import { CameraAnimator } from "../CameraAnimator";
+import { CinematicCameraController, startCinematicScene, isCinematicMode } from "../CinematicCameraController";
 import { CoordinateRuler } from "../CoordinateRuler";
 import { useTexture } from "@react-three/drei";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { initializeHeightmap } from "../terrainHeightSampler";
+import { getCurrentExploreScene, subscribeToExploreScene } from "../SceneNavigator";
 
 export function Scene3({ textureRotation = 0 }) {
-  // Satellite view scene
+  // Scene 3: Satellite View - Global position
   const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
   const terrainRef = useRef();
   
@@ -27,16 +29,36 @@ export function Scene3({ textureRotation = 0 }) {
       initializeHeightmap(heightmapTexture.image);
     }
   }, [heightmapTexture]);
+
+  // Start cinematic scene when component mounts or scene changes
+  useEffect(() => {
+    const checkAndStart = () => {
+      const currentScene = getCurrentExploreScene();
+      if (currentScene === 3) {
+        startCinematicScene(3);
+      }
+    };
+    
+    checkAndStart();
+    
+    // Subscribe to scene changes
+    const unsubscribe = subscribeToExploreScene(checkAndStart);
+    
+    return () => {
+      unsubscribe();
+    };
+  }, []);
   
   return (
     <>
-      <FreeCameraDragControls />
+      {!isCinematicMode() && <FreeCameraDragControls />}
+      <CinematicCameraController />
       <CameraAnimator />
       <CameraPositionLogger />
       <SphereEnv />
       <Environment background={false} files={"assets/textures/envmap.hdr"} />
 
-      <PerspectiveCamera makeDefault position={[0, 50, 50]} fov={60} />
+      <PerspectiveCamera makeDefault position={[0.0, 35.0, 0.0]} fov={35} />
 
       <MountainRoadLandscape ref={terrainRef} textureRotation={textureRotation} />
       <LocationBeam />

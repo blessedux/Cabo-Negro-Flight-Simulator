@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { PerspectiveCamera, Environment } from "@react-three/drei";
 import { EffectComposer, HueSaturation } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
@@ -11,13 +11,15 @@ import { Compass } from "../Compass";
 import { CollisionDetector } from "../CollisionDetector";
 import { CameraPositionLogger } from "../CameraPositionLogger";
 import { CameraAnimator } from "../CameraAnimator";
+import { CinematicCameraController, startCinematicScene, isCinematicMode } from "../CinematicCameraController";
 import { CoordinateRuler } from "../CoordinateRuler";
 import { useTexture } from "@react-three/drei";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { initializeHeightmap } from "../terrainHeightSampler";
+import { getCurrentExploreScene, subscribeToExploreScene } from "../SceneNavigator";
 
 export function Scene1({ textureRotation = 0 }) {
-  // Default Orbit scene - explore scene without interactive tile
+  // Scene 1: Cabo Negro Terrain - Orbit around terrain
   const heightmapTexture = useTexture("assets/textures/punta-arenas-cabonegro-heightmap.png");
   const terrainRef = useRef();
   
@@ -27,16 +29,36 @@ export function Scene1({ textureRotation = 0 }) {
       initializeHeightmap(heightmapTexture.image);
     }
   }, [heightmapTexture]);
+
+  // Start cinematic scene when component mounts or scene changes
+  useEffect(() => {
+    const checkAndStart = () => {
+      const currentScene = getCurrentExploreScene();
+      if (currentScene === 1) {
+        startCinematicScene(1);
+      }
+    };
+    
+    checkAndStart();
+    
+    // Subscribe to scene changes
+    const unsubscribe = subscribeToExploreScene(checkAndStart);
+    
+    return () => {
+      unsubscribe();
+    };
+  }, []);
   
   return (
     <>
-      <FreeCameraDragControls />
+      {!isCinematicMode() && <FreeCameraDragControls />}
+      <CinematicCameraController />
       <CameraAnimator />
       <CameraPositionLogger />
       <SphereEnv />
       <Environment background={false} files={"assets/textures/envmap.hdr"} />
 
-      <PerspectiveCamera makeDefault position={[0, 8, 8]} fov={60} />
+      <PerspectiveCamera makeDefault position={[0, 3.5, 6.5]} fov={40} />
 
       <MountainRoadLandscape ref={terrainRef} textureRotation={textureRotation} />
       <LocationBeam />

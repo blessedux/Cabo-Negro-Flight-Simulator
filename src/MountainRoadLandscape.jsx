@@ -265,32 +265,12 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
           const heightmapPixelY = Math.max(0, Math.min(heightmapCanvas.height - 1, Math.floor(heightmapV)));
           const heightmapPixelIndex = (heightmapPixelY * heightmapCanvas.width + heightmapPixelX) * 4;
           
-          if (heightmapPixelIndex >= 0 && heightmapPixelIndex < heightmapData.length - 3) {
-            
-            // Get elevation value from heightmap (grayscale - this is actual elevation data)
-            const elevationValue = heightmapData[heightmapPixelIndex]; // Using red channel (grayscale)
-            
-            // Use heightmap directly for real topography
-            // Normalize elevation to 0-1 range
-            const normalizedElevation = elevationValue / 255;
-            
-            // Apply sea level threshold (25% = sea level based on documentation)
-            const seaLevelThreshold = 0.25;
-            const adjustedElevation = (normalizedElevation - seaLevelThreshold) / (1 - seaLevelThreshold);
-            
-            // Apply base height scale and exaggeration multiplier
-            const height = adjustedElevation * heightScale * heightExaggeration;
-            
-            // Apply height to Y coordinate (vertical axis)
-            positionArray[i + 1] = height;
-            
-            minHeight = Math.min(minHeight, height);
-            maxHeight = Math.max(maxHeight, height);
-          } else {
-            // Fallback: set to sea level if out of bounds
-            positionArray[i + 1] = 0;
-            samplesOutOfBounds++;
-          }
+          // Make terrain completely flat (no heightmap)
+          // Set all Y coordinates to 0 (sea level)
+          positionArray[i + 1] = 0;
+          
+          minHeight = 0;
+          maxHeight = 0;
         }
         
         if (samplesOutOfBounds > 0) {

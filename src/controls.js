@@ -57,10 +57,18 @@ export function setMenuOpen(value) {
 window.addEventListener("keydown", (e) => {
   const key = e.key.toLowerCase();
   
-  // Handle Space key for orbit pause (only if menu is not open)
+  // Handle Space key - check if we're in flight scene or explore scene
   if (key === " " && !isMenuOpen) {
     e.preventDefault();
-    isOrbitPaused = !isOrbitPaused;
+    // Check current route to determine behavior
+    const currentPath = window.location.pathname;
+    if (currentPath === "/flight") {
+      // In flight scene: toggle pause
+      setPaused(!isPaused);
+    } else {
+      // In explore scene: toggle orbit pause
+      isOrbitPaused = !isOrbitPaused;
+    }
     return;
   }
   

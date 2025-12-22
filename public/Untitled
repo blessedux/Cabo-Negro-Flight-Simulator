@@ -1,7 +1,0 @@
-Our menu is not centered anymore. Let's center the controls container in the screen on desktop. In the movement, the AWSD type of boxes are in the wrong position. We need:
-- A on the left
-- S on the center
-- D on the right
-- W on top (as it is right now)  The only thing that we need to change is we have two boxes in the top row and two boxes in the bottom row. We need to have three boxes in the bottom row, and one box in the center upper row. Height is good, it looks good. Rotate camera mouse drag is good. Restart/pause let's add two toggle buttons:
-1. One to turn off the folly
-2. One to turn off the music  Our menu should have the option to go back to the landing page. We also need to bring back our navbar, a little map that we need to create right now. It's going to be super simple, transparent not bar with only one thing: a centered bar with some buttons and a logo. The navbar needs to be dragable and droppable to take it off the screen and only visible on desktop. It should hide upwards in order to yeah actually fucked in a bar. Let's only have a logo to go back to the page that says Cabo Negro. In the public directory.
