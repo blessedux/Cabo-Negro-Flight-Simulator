@@ -1,7 +1,6 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "cleanUrls": true,
   "headers": [
     {
       "source": "/assets/models/(.*\\.glb)",
@@ -32,7 +31,15 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!.*\\.).*)",
+      "source": "/explore",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/flight",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/terrain-3d-test",
       "destination": "/index.html"
     }
   ]
