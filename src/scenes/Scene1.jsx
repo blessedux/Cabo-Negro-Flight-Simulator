@@ -16,6 +16,7 @@ import { CoordinateRuler } from "../CoordinateRuler";
 import { useTexture } from "@react-three/drei";
 import { useRef } from "react";
 import { getCurrentExploreScene, subscribeToExploreScene } from "../SceneNavigator";
+import { TEXTURES } from "../config/assets";
 
 export function Scene1({ textureRotation = 0 }) {
   // Scene 1: Cabo Negro Terrain - Orbit around terrain
@@ -52,7 +53,7 @@ export function Scene1({ textureRotation = 0 }) {
       <CameraAnimator />
       <CameraPositionLogger />
       <SphereEnv />
-      <Environment background={false} files={"/assets/textures/envmap.hdr"} />
+      <Environment background={false} files={TEXTURES.envmapHdr} />
 
       <PerspectiveCamera makeDefault position={[0, 3.5, 6.5]} fov={40} />
 

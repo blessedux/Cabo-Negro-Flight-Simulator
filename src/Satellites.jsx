@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { Vector3, Euler } from 'three';
+import { MODELS } from './config/assets';
 import * as THREE from 'three';
 import { getFreeExplorationMode } from './FreeExplorationMode';
 import { setSatelliteFollowMode, stopSatelliteFollowMode } from './FreeCameraDragControls';
@@ -27,7 +28,7 @@ function Satellite({
   const [isHovered, setIsHovered] = useState(false);
   
   // Load the actual Starlink satellite model - must be called unconditionally
-  const { scene: satelliteModel } = useGLTF("/assets/models/starlink_spacex_satellite.glb");
+  const { scene: satelliteModel } = useGLTF(MODELS.starlinkSatellite);
   
   // Handle click on satellite
   const handleClick = (e) => {
@@ -251,4 +252,4 @@ export function Satellites() {
 }
 
 // Preload the Starlink satellite model
-useGLTF.preload("/assets/models/starlink_spacex_satellite.glb");
+useGLTF.preload(MODELS.starlinkSatellite);

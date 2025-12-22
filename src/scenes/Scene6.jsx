@@ -16,6 +16,7 @@ import { CoordinateRuler } from "../CoordinateRuler";
 import { useTexture } from "@react-three/drei";
 import { useRef } from "react";
 import { getCurrentExploreScene, subscribeToExploreScene } from "../SceneNavigator";
+import { TEXTURES } from "../config/assets";
 
 // Data Center Models
 function DataCenterModels() {
@@ -67,7 +68,7 @@ export function Scene6({ textureRotation = 0 }) {
       <CameraAnimator />
       <CameraPositionLogger />
       <SphereEnv />
-      <Environment background={false} files={"/assets/textures/envmap.hdr"} />
+      <Environment background={false} files={TEXTURES.envmapHdr} />
 
       <PerspectiveCamera makeDefault position={[2.4, 2.2, 4.1]} fov={38} />
 

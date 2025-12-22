@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState, forwardRef } from "react";
 import { useGLTF, useTexture } from "@react-three/drei";
 import { Color, MeshStandardMaterial, RepeatWrapping, ClampToEdgeWrapping, PlaneGeometry } from "three";
 import { getHeightExaggeration } from "./terrainHeightUtils";
+import { MODELS, TEXTURES } from "./config/assets";
 
 export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({ textureRotation = 0, ...props }, ref) {
   const groupRef = useRef();
@@ -9,10 +10,10 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
   const [heightExaggeration, setHeightExaggeration] = useState(getHeightExaggeration());
   
   // Load the GLB model
-  const { scene } = useGLTF("/assets/models/terrain-tiles.glb");
+  const { scene } = useGLTF(MODELS.terrainTiles);
   
   // Load terrain texture
-  const terrainTexture = useTexture("/assets/textures/terrain-texture.png");
+  const terrainTexture = useTexture(TEXTURES.terrainTexture);
   
   // Listen for height exaggeration changes
   useEffect(() => {
@@ -248,4 +249,4 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
   );
 });
 
-useGLTF.preload("/assets/models/terrain-tiles.glb");
+useGLTF.preload(MODELS.terrainTiles);

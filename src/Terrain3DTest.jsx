@@ -9,10 +9,11 @@ import { FreeCameraDragControls } from "./FreeCameraDragControls";
 import { Compass } from "./Compass";
 import { CollisionDetector } from "./CollisionDetector";
 import * as THREE from "three";
+import { MODELS, TEXTURES } from "./config/assets";
 
 // Terrain 3D component
 function Terrain3DModel() {
-  const { scene } = useGLTF("/assets/textures/terrain-3d.glb");
+  const { scene } = useGLTF(MODELS.terrain3d);
   const groupRef = useRef();
   
   // Debug logging and scaling
@@ -154,7 +155,7 @@ export function Terrain3DTest() {
         <Suspense fallback={null}>
           <FreeCameraDragControls />
           <SphereEnv />
-          <Environment background={false} files={"/assets/textures/envmap.hdr"} />
+          <Environment background={false} files={TEXTURES.envmapHdr} />
           
           <PerspectiveCamera makeDefault position={[0, 20, 40]} fov={50} />
           
@@ -197,5 +198,5 @@ export function Terrain3DTest() {
 }
 
 // Preload the model
-useGLTF.preload("/assets/textures/terrain-3d.glb");
+useGLTF.preload(MODELS.terrain3d);
 

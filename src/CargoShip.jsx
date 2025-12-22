@@ -9,6 +9,7 @@ import { setCargoShipOrbitMode } from './FreeCameraDragControls';
 import { setCameraTarget } from './CameraAnimator';
 import { setTileModalOpen } from './TileModal';
 import { setOrbitPaused } from './controls';
+import { MODELS } from './config/assets';
 
 // Global state for cargo ship position and rotation
 // Initialize with values from first image (default)
@@ -126,7 +127,7 @@ function CargoShipModel() {
   
   // Load cargo ship model - useGLTF must be called unconditionally
   // Errors are handled by Suspense/ErrorBoundary in parent component
-  const shipModel = useGLTF("/assets/models/cargo_ship_02.glb");
+  const shipModel = useGLTF(MODELS.cargoShip);
 
   useFrame(() => {
     if (!shipRef.current) return;
@@ -254,4 +255,4 @@ export function CargoShip() {
 }
 
 // Preload the cargo ship model at module level (like Airplane.jsx)
-useGLTF.preload("/assets/models/cargo_ship_02.glb");
+useGLTF.preload(MODELS.cargoShip);

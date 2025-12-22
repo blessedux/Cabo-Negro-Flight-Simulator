@@ -35,7 +35,7 @@ export function CabonegroHighAltitude({ textureRotation = 0 }) {
       <CameraStartAnimation />
       <CameraAngleLogger enabled={true} logInterval={1000} />
       <SphereEnv />
-      <Environment background={false} files={"/assets/textures/envmap.hdr"} />
+      <Environment background={false} files={TEXTURES.envmapHdr} />
 
       <PerspectiveCamera makeDefault position={[0, 15, 12]} fov={60} />
 

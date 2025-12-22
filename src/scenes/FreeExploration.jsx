@@ -24,7 +24,7 @@ export function Scene2({ textureRotation = 0 }) {
     <>
       <FreeCameraDragControls />
       <SphereEnv />
-      <Environment background={false} files={"/assets/textures/envmap.hdr"} />
+      <Environment background={false} files={TEXTURES.envmapHdr} />
 
       <PerspectiveCamera makeDefault position={[0, 8, 8]} fov={60} />
 

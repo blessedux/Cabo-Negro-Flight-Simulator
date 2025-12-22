@@ -16,6 +16,7 @@ import { CoordinateRuler } from "../CoordinateRuler";
 import { useTexture } from "@react-three/drei";
 import { useRef } from "react";
 import { getCurrentExploreScene, subscribeToExploreScene } from "../SceneNavigator";
+import { TEXTURES } from "../config/assets";
 
 // Synthesis Models - Combine all elements
 function SynthesisModels() {
@@ -72,7 +73,7 @@ export function Scene7({ textureRotation = 0 }) {
       <CameraAnimator />
       <CameraPositionLogger />
       <SphereEnv />
-      <Environment background={false} files={"/assets/textures/envmap.hdr"} />
+      <Environment background={false} files={TEXTURES.envmapHdr} />
 
       <PerspectiveCamera makeDefault position={[0.0, 6.5, 10.0]} fov={40} />
 

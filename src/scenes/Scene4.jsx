@@ -16,6 +16,7 @@ import { CoordinateRuler } from "../CoordinateRuler";
 import { useTexture } from "@react-three/drei";
 import { useRef } from "react";
 import { getCurrentExploreScene, subscribeToExploreScene } from "../SceneNavigator";
+import { TEXTURES } from "../config/assets";
 
 // Maritime Terminal Models
 function MaritimeTerminalModels() {
@@ -71,7 +72,7 @@ export function Scene4({ textureRotation = 0 }) {
       <CameraAnimator />
       <CameraPositionLogger />
       <SphereEnv />
-      <Environment background={false} files={"/assets/textures/envmap.hdr"} />
+      <Environment background={false} files={TEXTURES.envmapHdr} />
 
       <PerspectiveCamera makeDefault position={[4.8, 2.1, -6.4]} fov={40} />
 

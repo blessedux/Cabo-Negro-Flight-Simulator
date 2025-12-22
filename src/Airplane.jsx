@@ -10,6 +10,7 @@ import { Matrix4, Quaternion, Vector3, SRGBColorSpace, Color } from 'three';
 import { updatePlaneAxis, isMenuOpen } from './controls';
 import { cameraRotationOffset } from './CameraDragControls';
 import { getAnimatedCameraParams } from './CameraStartAnimation';
+import { MODELS } from './config/assets';
 
 const x = new Vector3(1, 0, 0);
 const y = new Vector3(0, 1, 0);
@@ -26,7 +27,7 @@ const delayedQuaternion = new Quaternion();
 export function Airplane(props) {
   // thanks to:
   // https://sketchfab.com/3d-models/vintage-toy-airplane-7de2ecbc0acb4b1886c3df3d196c366b
-  const gltf = useGLTF('assets/models/airplane_black.glb');
+  const gltf = useGLTF(MODELS.airplaneBlack);
   const { nodes, materials } = gltf;
   const groupRef = useRef();
   const helixMeshRef = useRef();
@@ -396,4 +397,4 @@ export function Airplane(props) {
   )
 }
 
-useGLTF.preload('/assets/models/airplane_black.glb');
+useGLTF.preload(MODELS.airplaneBlack);
