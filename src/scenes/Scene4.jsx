@@ -39,15 +39,12 @@ function MaritimeTerminalModels() {
 
 export function Scene4({ textureRotation = 0 }) {
   // Scene 4: Maritime Terminal - Dolly forward
-  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
   const terrainRef = useRef();
   
   // Initialize terrain height sampler
   useEffect(() => {
-    if (heightmapTexture && heightmapTexture.image) {
-      initializeHeightmap(heightmapTexture.image);
-    }
-  }, [heightmapTexture]);
+    // Heightmap initialization removed
+  }, []);
 
   // Start cinematic scene when component mounts or scene changes
   useEffect(() => {

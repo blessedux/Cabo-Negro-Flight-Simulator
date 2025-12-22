@@ -19,7 +19,6 @@ import { initializeHeightmap } from "../terrainHeightSampler";
 
 export function CabonegroHighAltitude({ textureRotation = 0 }) {
   // textureRotation prop kept for compatibility but defaults to 0
-  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
   
   // Reset camera animation when scene loads/restarts
   useEffect(() => {
@@ -28,10 +27,8 @@ export function CabonegroHighAltitude({ textureRotation = 0 }) {
   
   // Initialize terrain height sampler
   useEffect(() => {
-    if (heightmapTexture && heightmapTexture.image) {
-      initializeHeightmap(heightmapTexture.image);
-    }
-  }, [heightmapTexture]);
+    // Heightmap initialization removed
+  }, []);
   
   return (
     <>

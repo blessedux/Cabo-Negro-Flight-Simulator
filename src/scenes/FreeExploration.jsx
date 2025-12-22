@@ -15,14 +15,11 @@ import { initializeHeightmap } from "../terrainHeightSampler";
 
 export function Scene2({ textureRotation = 0 }) {
   // textureRotation prop kept for compatibility but defaults to 0
-  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
   
   // Initialize terrain height sampler
   useEffect(() => {
-    if (heightmapTexture && heightmapTexture.image) {
-      initializeHeightmap(heightmapTexture.image);
-    }
-  }, [heightmapTexture]);
+    // Heightmap initialization removed
+  }, []);
   
   return (
     <>

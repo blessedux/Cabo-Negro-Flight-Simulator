@@ -32,65 +32,14 @@ export function LocationBeam() {
   const sceneX = offsetEastMeters * sceneScale;
   const sceneZ = -offsetNorthMeters * sceneScale; // Negative because north = negative Z
   
-  // Load heightmap to sample terrain height
-  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
+  // Heightmap removed - using flat terrain
   const [terrainHeight, setTerrainHeight] = useState(0);
   
   // Calculate terrain height at beam position
   useEffect(() => {
-    if (!heightmapTexture || !heightmapTexture.image) return;
-    
-    // Terrain settings (matching MountainRoadLandscape)
-    const heightmapCoverageMeters = 80000; // 80 km
-    const textureCenterLat = -52.871;
-    const textureCenterLng = -70.862;
-    const heightmapCenterLat = -53.061;
-    const heightmapCenterLng = -70.878;
-    
-    // Convert lat/lng difference to meters
-    const metersPerDegreeLat = 111320;
-    const metersPerDegreeLng = 111320 * Math.cos((heightmapCenterLat * Math.PI) / 180);
-    
-    // Calculate target location in lat/lng
-    const targetLat = textureCenterLat + (offsetNorthMeters / metersPerDegreeLat);
-    const targetLng = textureCenterLng + (offsetEastMeters / metersPerDegreeLng);
-    
-    // Calculate offset from heightmap center
-    const latDiff = targetLat - heightmapCenterLat;
-    const lngDiff = targetLng - heightmapCenterLng;
-    
-    const offsetNorth = latDiff * metersPerDegreeLat;
-    const offsetEast = lngDiff * metersPerDegreeLng;
-    
-    // Convert to heightmap pixel coordinates
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = heightmapTexture.image.width || 1024;
-    canvas.height = heightmapTexture.image.height || 1024;
-    ctx.drawImage(heightmapTexture.image, 0, 0);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
-    
-    const heightmapMetersPerPixel = heightmapCoverageMeters / canvas.width;
-    const heightmapCenterX = canvas.width / 2;
-    const heightmapCenterY = canvas.height / 2;
-    const pixelX = Math.floor(heightmapCenterX + (offsetEast / heightmapMetersPerPixel));
-    const pixelY = Math.floor(heightmapCenterY - (offsetNorth / heightmapMetersPerPixel));
-    
-    // Sample heightmap
-    if (pixelX >= 0 && pixelX < canvas.width && pixelY >= 0 && pixelY < canvas.height) {
-      const pixelIndex = (pixelY * canvas.width + pixelX) * 4;
-      const gray = (data[pixelIndex] + data[pixelIndex + 1] + data[pixelIndex + 2]) / 3;
-      const normalizedHeight = gray / 255;
-      const seaLevelThreshold = 0.25;
-      const adjustedHeight = (normalizedHeight - seaLevelThreshold) / (1 - seaLevelThreshold);
-      const heightScale = 5.0; // Matching MountainRoadLandscape
-      const height = adjustedHeight * heightScale;
-      setTerrainHeight(height);
-    } else {
-      setTerrainHeight(0); // Default to sea level
-    }
-  }, [heightmapTexture, offsetNorthMeters, offsetEastMeters]);
+    // Use flat terrain (heightmap removed)
+    setTerrainHeight(0);
+  }, [offsetNorthMeters, offsetEastMeters]);
   
   // Use terrain height for beam base position
   const sceneY = terrainHeight;

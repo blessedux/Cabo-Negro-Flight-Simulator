@@ -21,15 +21,12 @@ import { getCurrentExploreScene, subscribeToExploreScene } from "../SceneNavigat
 
 export function Scene2({ textureRotation = 0 }) {
   // Scene 2: Punta Arenas Context - Slow pan orbit
-  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
   const terrainRef = useRef();
   
   // Initialize terrain height sampler
   useEffect(() => {
-    if (heightmapTexture && heightmapTexture.image) {
-      initializeHeightmap(heightmapTexture.image);
-    }
-  }, [heightmapTexture]);
+    // Heightmap initialization removed
+  }, []);
 
   // Start cinematic scene when component mounts or scene changes
   useEffect(() => {

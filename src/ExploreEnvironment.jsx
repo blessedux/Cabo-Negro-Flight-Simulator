@@ -670,7 +670,6 @@ function Terrain3D({ terrainRef }) {
 }
 
 export function ExploreEnvironment({ textureRotation = 0 }) {
-  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
   const terrainRef = useRef();
   const [currentScene, setCurrentScene] = useState(getCurrentExploreScene());
   const dataCenterModalOpenRef = useRef(false);
@@ -686,10 +685,8 @@ export function ExploreEnvironment({ textureRotation = 0 }) {
   
   // Initialize terrain height sampler once
   useEffect(() => {
-    if (heightmapTexture && heightmapTexture.image) {
-      initializeHeightmap(heightmapTexture.image);
-    }
-  }, [heightmapTexture]);
+    // Heightmap initialization removed
+  }, []);
   
   // Monitor tile modal state to track when data center modal is open
   useEffect(() => {

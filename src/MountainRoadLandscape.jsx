@@ -11,9 +11,8 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
   // Load the GLB model
   const { scene } = useGLTF("/assets/models/terrain-tiles.glb");
   
-  // Load both textures
+  // Load terrain texture
   const terrainTexture = useTexture("/assets/textures/terrain-texture.png");
-  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
   
   // Listen for height exaggeration changes
   useEffect(() => {
@@ -47,13 +46,7 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
       });
     }
     
-    if (heightmapTexture) {
-      heightmapTexture.wrapS = RepeatWrapping;
-      heightmapTexture.wrapT = RepeatWrapping;
-      heightmapTexture.flipY = false;
-      console.log("✓ Heightmap texture configured");
-    }
-  }, [terrainTexture, heightmapTexture]);
+  }, [terrainTexture]);
   
   // Update texture rotation when it changes
   useEffect(() => {
@@ -75,12 +68,11 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
     }
   }, [textureRotation, terrainTexture]);
   
-  // Create processed scene with heightmap and texture
+  // Create processed scene with texture
   const processedScene = useMemo(() => {
-    if (!scene || !heightmapTexture || !terrainTexture) {
+    if (!scene || !terrainTexture) {
       console.log("Waiting for assets to load...", {
         scene: !!scene,
-        heightmap: !!heightmapTexture,
         texture: !!terrainTexture
       });
       return null;
@@ -91,17 +83,7 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
     // Clone the scene to avoid mutating the original
     const clonedScene = scene.clone();
     
-    // Get heightmap image data (for elevation - real topography)
-    const heightmapCanvas = document.createElement('canvas');
-    const heightmapCtx = heightmapCanvas.getContext('2d');
-    heightmapCanvas.width = heightmapTexture.image.width || 512;
-    heightmapCanvas.height = heightmapTexture.image.height || 512;
-    heightmapCtx.drawImage(heightmapTexture.image, 0, 0);
-    const heightmapImageData = heightmapCtx.getImageData(0, 0, heightmapCanvas.width, heightmapCanvas.height);
-    const heightmapData = heightmapImageData.data;
-    
-    console.log(`Heightmap loaded: ${heightmapCanvas.width}x${heightmapCanvas.height} pixels`);
-    console.log(`Using real topography from heightmap`);
+    console.log(`Using terrain from GLB model`);
     
     // Terrain settings based on documentation
     // Texture: 2048×2048 pixels covering ~3.45 km × 3.45 km
@@ -125,66 +107,8 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
     console.log(`Texture: 2048×2048 pixels = 301×301 tiles`);
     console.log(`Each tile: ~11.48 meters`);
     
-    // Heightmap settings
-    const heightmapCoverageMeters = 80000; // 80 km
-    const heightmapMetersPerPixel = heightmapCoverageMeters / heightmapCanvas.width; // ~78.125 m/pixel
-    
-    // Texture center: -52.871294° S, -70.861816° W (from documentation)
-    // Heightmap center: -53.061222° S, -70.878388° W (from documentation)
-    // Calculate offset from heightmap center to texture center
-    const textureCenterLat = -52.871294;
-    const textureCenterLng = -70.861816;
-    const heightmapCenterLat = -53.061222;
-    const heightmapCenterLng = -70.878388;
-    
-    // Convert lat/lng difference to meters (at latitude -53°)
-    const metersPerDegreeLat = 111320; // Constant
-    const metersPerDegreeLng = 111320 * Math.cos((heightmapCenterLat * Math.PI) / 180); // ~66,990 m at -53°
-    
-    const latDiff = textureCenterLat - heightmapCenterLat; // 0.19° (north)
-    const lngDiff = textureCenterLng - heightmapCenterLng; // 0.016° (east)
-    
-    const offsetNorth = latDiff * metersPerDegreeLat; // ~21.1 km north
-    const offsetEast = lngDiff * metersPerDegreeLng; // ~1.07 km east
-    
-    // Convert offset to heightmap pixel coordinates
-    // Heightmap center is at (512, 512) in pixel space
-    const heightmapCenterX = heightmapCanvas.width / 2;
-    const heightmapCenterY = heightmapCanvas.height / 2;
-    const textureCenterX = heightmapCenterX + (offsetEast / heightmapMetersPerPixel);
-    const textureCenterY = heightmapCenterY - (offsetNorth / heightmapMetersPerPixel); // Negative because Y is flipped
-    
-    // Calculate the region of heightmap that corresponds to texture
-    const textureSizeInHeightmapPixels = textureCoverageMeters / heightmapMetersPerPixel; // ~44 pixels
-    
-    // Height scale - make it visible!
-    // The heightmap has 1500x exaggeration, but we need visible height in the scene
-    const heightScale = 5.0; // Increased for visible height variation
-    const segments = 512; // High resolution for detailed terrain (increased from 128)
-    
-    // Get current height exaggeration multiplier
-    const exaggeration = heightExaggeration;
-    
-    // Check if texture region is within heightmap bounds
-    const textureRegionValid = 
-      textureCenterX >= 0 && textureCenterX < heightmapCanvas.width &&
-      textureCenterY >= 0 && textureCenterY < heightmapCanvas.height &&
-      textureSizeInHeightmapPixels > 0 && textureSizeInHeightmapPixels < heightmapCanvas.width;
-    
-    // If region is invalid, use center of heightmap as fallback
-    const useAlignedRegion = textureRegionValid;
-    const finalTextureCenterX = useAlignedRegion ? textureCenterX : heightmapCanvas.width / 2;
-    const finalTextureCenterY = useAlignedRegion ? textureCenterY : heightmapCanvas.height / 2;
-    const finalTextureSize = useAlignedRegion ? textureSizeInHeightmapPixels : Math.min(heightmapCanvas.width, heightmapCanvas.height) * 0.1; // 10% of heightmap
-    
-    console.log("=== TERRAIN ALIGNMENT ===");
-    console.log(`Texture coverage (real): ${textureCoverageMeters}m (${(textureCoverageMeters/1000).toFixed(2)} km)`);
-    console.log(`Terrain size (scene): ${terrainSize.toFixed(2)} units`);
-    console.log(`Heightmap coverage: ${heightmapCoverageMeters}m (${(heightmapCoverageMeters/1000).toFixed(0)} km)`);
-    console.log(`Texture center in heightmap pixels: (${textureCenterX.toFixed(1)}, ${textureCenterY.toFixed(1)})`);
-    console.log(`Texture size in heightmap pixels: ${textureSizeInHeightmapPixels.toFixed(1)}`);
-    console.log(`Texture region valid: ${textureRegionValid}`);
-    console.log(`Height scale: ${heightScale}`);
+    // Use terrain as-is from GLB model
+    const segments = 512;
     
     // Clear previous mesh refs
     meshRefs.current = [];
@@ -231,57 +155,12 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
         const positionArray = positions.array;
         const vertexCount = positions.count;
         
-        console.log(`Applying heightmap to ${vertexCount} vertices...`);
-        console.log(`Using heightmap region: center (${finalTextureCenterX.toFixed(1)}, ${finalTextureCenterY.toFixed(1)}), size: ${finalTextureSize.toFixed(1)}px`);
+        console.log(`Processing ${vertexCount} vertices from GLB model...`);
         
-        let minHeight = Infinity;
-        let maxHeight = -Infinity;
-        let samplesOutOfBounds = 0;
-        
-        // Modify each vertex using UV coordinates
-        for (let i = 0; i < positionArray.length; i += 3) {
-          // Get UV coordinates for this vertex (0-1 range)
-          const uvIndex = (i / 3) * 2;
-          let u = uvs.array[uvIndex];
-          let v = uvs.array[uvIndex + 1];
-          
-          // Flip U coordinate horizontally to swap east/west
-          u = 1 - u;
-          
-          // Clamp UV coordinates
-          u = Math.max(0, Math.min(1, u));
-          v = Math.max(0, Math.min(1, v));
-          
-          // Update the UV array with flipped coordinates
-          uvs.array[uvIndex] = u;
-          uvs.array[uvIndex + 1] = v;
-          
-          // Sample elevation from heightmap (grayscale elevation data)
-          const heightmapU = (u - 0.5) * finalTextureSize + finalTextureCenterX;
-          const heightmapV = (v - 0.5) * finalTextureSize + finalTextureCenterY;
-          
-          // Clamp to valid heightmap bounds
-          const heightmapPixelX = Math.max(0, Math.min(heightmapCanvas.width - 1, Math.floor(heightmapU)));
-          const heightmapPixelY = Math.max(0, Math.min(heightmapCanvas.height - 1, Math.floor(heightmapV)));
-          const heightmapPixelIndex = (heightmapPixelY * heightmapCanvas.width + heightmapPixelX) * 4;
-          
-          // Make terrain completely flat (no heightmap)
-          // Set all Y coordinates to 0 (sea level)
-          positionArray[i + 1] = 0;
-          
-          minHeight = 0;
-          maxHeight = 0;
-        }
-        
-        if (samplesOutOfBounds > 0) {
-          console.warn(`Warning: ${samplesOutOfBounds} samples were out of heightmap bounds`);
-        }
-        
-        console.log(`Height range: ${minHeight.toFixed(2)} to ${maxHeight.toFixed(2)} units`);
-        console.log(`Height variation: ${(maxHeight - minHeight).toFixed(2)} units`);
-        
-        if (maxHeight - minHeight < 0.1) {
-          console.warn("⚠️ WARNING: Very little height variation detected! Heightmap may not be applying correctly.");
+        // Use terrain geometry as-is from GLB model (no heightmap modification)
+        // Just flip U coordinate for texture orientation
+        for (let i = 0; i < uvs.count; i++) {
+          uvs.array[i * 2] = 1 - uvs.array[i * 2]; // Flip U coordinate
         }
         
         // Update geometry
@@ -344,7 +223,7 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
     
     console.log(`=== TERRAIN PROCESSING COMPLETE (${meshCount} meshes) ===`);
     return clonedScene;
-  }, [scene, heightmapTexture, terrainTexture, textureRotation, heightExaggeration]);
+  }, [scene, terrainTexture, textureRotation]);
   
   if (!processedScene) {
     return null; // Wait for everything to load

@@ -35,15 +35,12 @@ function WindTurbineModels() {
 
 export function Scene5({ textureRotation = 0 }) {
   // Scene 5: Wind Energy Potential - Lateral tracking shot
-  const heightmapTexture = useTexture("/assets/textures/punta-arenas-cabonegro-heightmap.png");
   const terrainRef = useRef();
   
   // Initialize terrain height sampler
   useEffect(() => {
-    if (heightmapTexture && heightmapTexture.image) {
-      initializeHeightmap(heightmapTexture.image);
-    }
-  }, [heightmapTexture]);
+    // Heightmap initialization removed
+  }, []);
 
   // Start cinematic scene when component mounts or scene changes
   useEffect(() => {
