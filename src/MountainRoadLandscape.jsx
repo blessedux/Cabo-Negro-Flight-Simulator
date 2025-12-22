@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState, forwardRef } from "react";
 import { useGLTF, useTexture } from "@react-three/drei";
-import { Color, MeshStandardMaterial, RepeatWrapping, ClampToEdgeWrapping, PlaneGeometry } from "three";
+import { Color, MeshStandardMaterial, RepeatWrapping, ClampToEdgeWrapping, PlaneGeometry, TextureLoader } from "three";
 import { getHeightExaggeration } from "./terrainHeightUtils";
 import { MODELS, TEXTURES } from "./config/assets";
 
@@ -8,12 +8,41 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
   const groupRef = useRef();
   const meshRefs = useRef([]);
   const [heightExaggeration, setHeightExaggeration] = useState(getHeightExaggeration());
+  const [highResTexture, setHighResTexture] = useState(null);
   
   // Load the GLB model
   const { scene } = useGLTF(MODELS.terrainTiles);
   
-  // Load terrain texture
-  const terrainTexture = useTexture(TEXTURES.terrainTexture);
+  // Load low-res texture first (fast initial load)
+  const terrainTexture = useTexture(TEXTURES.terrainTextureLow);
+  
+  // Progressive loading: Load high-res texture in background if available
+  useEffect(() => {
+    // Only load high-res if it's different from low-res (i.e., R2 is configured)
+    if (TEXTURES.terrainTexture !== TEXTURES.terrainTextureLow) {
+      const loader = new TextureLoader();
+      loader.load(
+        TEXTURES.terrainTexture,
+        (texture) => {
+          console.log("✓ High-resolution texture loaded:", {
+            size: `${texture.image?.width || 'unknown'}×${texture.image?.height || 'unknown'}`,
+            url: TEXTURES.terrainTexture
+          });
+          // Configure high-res texture same way as low-res
+          texture.wrapS = ClampToEdgeWrapping;
+          texture.wrapT = ClampToEdgeWrapping;
+          texture.repeat.set(1, 1);
+          texture.flipY = false;
+          texture.rotation = terrainTexture?.rotation || 0;
+          setHighResTexture(texture);
+        },
+        undefined,
+        (error) => {
+          console.warn("Failed to load high-resolution texture, using low-res:", error);
+        }
+      );
+    }
+  }, []);
   
   // Listen for height exaggeration changes
   useEffect(() => {
@@ -26,6 +55,9 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
       window.removeEventListener('heightExaggerationChanged', handleExaggerationChange);
     };
   }, []);
+  
+  // Use high-res texture if available, otherwise use low-res
+  const activeTexture = highResTexture || terrainTexture;
   
   // Configure textures
   useEffect(() => {
@@ -43,38 +75,47 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
         coverage: "3.45 km × 3.45 km",
         tiles: "301×301 (90,601 total)",
         wrapping: "ClampToEdge (no tiling)",
-        repeat: terrainTexture.repeat
+        repeat: terrainTexture.repeat,
+        quality: "low-res (fast load)"
       });
     }
     
-  }, [terrainTexture]);
+    if (highResTexture) {
+      console.log("✓ Switched to high-resolution texture");
+    }
+  }, [terrainTexture, highResTexture]);
   
   // Update texture rotation when it changes
   useEffect(() => {
-    if (terrainTexture) {
-      terrainTexture.rotation = textureRotation;
-      terrainTexture.needsUpdate = true;
+    const texture = activeTexture;
+    if (texture) {
+      texture.rotation = textureRotation;
+      texture.needsUpdate = true;
       
       // Update all stored mesh materials
       meshRefs.current.forEach((mesh) => {
         if (mesh && mesh.material) {
           const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
-          if (material && material.map === terrainTexture) {
-            material.needsUpdate = true;
+          if (material && material.map) {
+            // Update if using either texture
+            if (material.map === terrainTexture || material.map === highResTexture) {
+              material.map = texture;
+              material.needsUpdate = true;
+            }
           }
         }
       });
       
       console.log(`Texture rotation updated to ${(textureRotation * 180 / Math.PI).toFixed(1)}°`);
     }
-  }, [textureRotation, terrainTexture]);
+  }, [textureRotation, activeTexture, terrainTexture, highResTexture]);
   
   // Create processed scene with texture
   const processedScene = useMemo(() => {
-    if (!scene || !terrainTexture) {
+    if (!scene || !activeTexture) {
       console.log("Waiting for assets to load...", {
         scene: !!scene,
-        texture: !!terrainTexture
+        texture: !!activeTexture
       });
       return null;
     }
@@ -190,12 +231,12 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
         
         // Apply terrain texture to material
         // Set texture rotation before creating material
-        if (terrainTexture) {
-          terrainTexture.rotation = textureRotation;
+        if (activeTexture) {
+          activeTexture.rotation = textureRotation;
         }
         
         child.material = new MeshStandardMaterial({
-          map: terrainTexture,
+          map: activeTexture,
           color: 0xffffff,
           roughness: 0.7, // Slightly less rough for better texture visibility
           metalness: 0.05, // Lower metalness for more natural terrain
@@ -224,7 +265,7 @@ export const MountainRoadLandscape = forwardRef(function MountainRoadLandscape({
     
     console.log(`=== TERRAIN PROCESSING COMPLETE (${meshCount} meshes) ===`);
     return clonedScene;
-  }, [scene, terrainTexture, textureRotation]);
+  }, [scene, activeTexture, textureRotation]);
   
   if (!processedScene) {
     return null; // Wait for everything to load

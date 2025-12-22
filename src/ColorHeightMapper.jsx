@@ -22,6 +22,7 @@ export function ColorHeightMapper() {
   const [terrainTextureImage, setTerrainTextureImage] = useState(null);
 
   // Load terrain texture for color picking
+  // Use high-res if available, otherwise low-res
   useEffect(() => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -30,7 +31,15 @@ export function ColorHeightMapper() {
     };
     img.onerror = () => {
       console.error('Failed to load terrain texture for color picking');
+      // Fallback to low-res if high-res fails
+      if (TEXTURES.terrainTexture !== TEXTURES.terrainTextureLow) {
+        const fallbackImg = new Image();
+        fallbackImg.crossOrigin = 'anonymous';
+        fallbackImg.onload = () => setTerrainTextureImage(fallbackImg);
+        fallbackImg.src = TEXTURES.terrainTextureLow;
+      }
     };
+    // Try high-res first if available
     img.src = TEXTURES.terrainTexture;
   }, []);
 
