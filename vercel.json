@@ -9,6 +9,10 @@
         {
           "key": "Content-Type",
           "value": "model/gltf-binary"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     },
@@ -18,13 +22,17 @@
         {
           "key": "Content-Type",
           "value": "image/vnd.radiance"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
         }
       ]
     }
   ],
   "rewrites": [
     {
-      "source": "/((?!assets).*)",
+      "source": "/((?!assets|.*\\.(js|css|png|jpg|jpeg|gif|svg|glb|hdr|webp|json|woff|woff2|ttf|eot)).*)",
       "destination": "/index.html"
     }
   ]
