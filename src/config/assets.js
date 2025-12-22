@@ -29,7 +29,7 @@ export const MODELS = {
 
 // Texture paths
 export const TEXTURES = {
-  terrainTexture: getAssetUrl("assets/textures/terrain-texture.png"),
+  terrainTexture: getAssetUrl("assets/textures/terrain-texture-low.png"), // Using low-res version (187MB full version exceeds GitHub limit)
   envmapHdr: getAssetUrl("assets/textures/envmap.hdr"),
   envmapJpg: getAssetUrl("assets/textures/envmap.jpg"),
 };

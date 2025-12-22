@@ -8,6 +8,7 @@ import {
   loadColorMappings,
   TERRAIN_CATEGORIES
 } from './colorHeightMapping';
+import { TEXTURES } from './config/assets';
 
 export function ColorHeightMapper() {
   const [mappings, setMappings] = useState([]);
@@ -30,7 +31,7 @@ export function ColorHeightMapper() {
     img.onerror = () => {
       console.error('Failed to load terrain texture for color picking');
     };
-    img.src = '/assets/textures/terrain-texture.png';
+    img.src = TEXTURES.terrainTexture;
   }, []);
 
   // Subscribe to mapping changes
