@@ -10,7 +10,7 @@ function Root() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/flight" replace />} />
+        <Route path="/" element={<Navigate to="/explore" replace />} />
         <Route path="/flight" element={<FlightScene />} />
         <Route path="/explore" element={<ExploreScene />} />
         <Route path="/terrain-3d-test" element={<Terrain3DTest />} />
