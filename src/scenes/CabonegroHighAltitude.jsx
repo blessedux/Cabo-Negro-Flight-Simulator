@@ -15,7 +15,6 @@ import { CameraAngleLogger } from "../CameraAngleLogger";
 import { CameraStartAnimation, resetCameraStartAnimation } from "../CameraStartAnimation";
 import { useTexture } from "@react-three/drei";
 import { useEffect } from "react";
-import { initializeHeightmap } from "../terrainHeightSampler";
 
 export function CabonegroHighAltitude({ textureRotation = 0 }) {
   // textureRotation prop kept for compatibility but defaults to 0

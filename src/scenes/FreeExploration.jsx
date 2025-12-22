@@ -11,7 +11,6 @@ import { Compass } from "../Compass";
 import { CollisionDetector } from "../CollisionDetector";
 import { useTexture } from "@react-three/drei";
 import { useEffect } from "react";
-import { initializeHeightmap } from "../terrainHeightSampler";
 
 export function Scene2({ textureRotation = 0 }) {
   // textureRotation prop kept for compatibility but defaults to 0

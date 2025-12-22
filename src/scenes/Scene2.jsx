@@ -16,7 +16,6 @@ import { ClickableTerrainTile } from "../ClickableTerrainTile";
 import { CoordinateRuler } from "../CoordinateRuler";
 import { useTexture } from "@react-three/drei";
 import { useRef } from "react";
-import { initializeHeightmap } from "../terrainHeightSampler";
 import { getCurrentExploreScene, subscribeToExploreScene } from "../SceneNavigator";
 
 export function Scene2({ textureRotation = 0 }) {

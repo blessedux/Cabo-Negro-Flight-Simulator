@@ -15,7 +15,6 @@ import { CinematicCameraController, startCinematicScene, isCinematicMode } from 
 import { CoordinateRuler } from "../CoordinateRuler";
 import { useTexture } from "@react-three/drei";
 import { useRef } from "react";
-import { initializeHeightmap } from "../terrainHeightSampler";
 import { getCurrentExploreScene, subscribeToExploreScene } from "../SceneNavigator";
 
 export function Scene1({ textureRotation = 0 }) {

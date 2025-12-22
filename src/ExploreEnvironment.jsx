@@ -20,7 +20,7 @@ import { setOrbitPaused } from "./controls";
 import { ExploreCameraDataUpdater } from "./ExploreCameraDataUpdater";
 import { Satellites } from "./Satellites";
 import { CargoShip } from "./CargoShip";
-import { initializeHeightmap, sampleTerrainHeight } from "./terrainHeightSampler";
+import { sampleTerrainHeight } from "./terrainHeightSampler";
 import { ClickableTerrainTile } from "./ClickableTerrainTile";
 import { AnimatedTile } from "./AnimatedTile";
 import { getCurrentExploreScene, subscribeToExploreScene } from "./SceneNavigator";
