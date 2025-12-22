@@ -2,7 +2,8 @@
 // Set USE_CDN to true and update CDN_BASE_URL after setting up GitHub repo
 
 const USE_CDN = true; // Set to true when CDN is ready
-const CDN_BASE_URL = "https://cdn.jsdelivr.net/gh/blessedux/cabonegro-assets@main";
+// Using GitHub raw content - more reliable than jsDelivr for binary files
+const CDN_BASE_URL = "https://raw.githubusercontent.com/blessedux/cabonegro-assets/main";
 const LOCAL_BASE_URL = ""; // Empty for local assets (relative paths)
 
 const BASE_URL = USE_CDN ? CDN_BASE_URL : LOCAL_BASE_URL;
