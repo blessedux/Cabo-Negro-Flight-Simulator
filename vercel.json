@@ -3,15 +3,20 @@
   "outputDirectory": "dist",
   "headers": [
     {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    },
+    {
       "source": "/assets/models/(.*\\.glb)",
       "headers": [
         {
           "key": "Content-Type",
-          "value": "model/gltf-binary"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
+          "value": "application/octet-stream"
         }
       ]
     },
@@ -20,11 +25,7 @@
       "headers": [
         {
           "key": "Content-Type",
-          "value": "image/vnd.radiance"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
+          "value": "application/octet-stream"
         }
       ]
     }
@@ -40,10 +41,6 @@
     },
     {
       "source": "/terrain-3d-test",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/",
       "destination": "/index.html"
     }
   ]
