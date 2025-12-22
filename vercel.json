@@ -32,11 +32,7 @@
   ],
   "rewrites": [
     {
-      "source": "/assets/:path*",
-      "destination": "/assets/:path*"
-    },
-    {
-      "source": "/(.*)",
+      "source": "/((?!.*\\..*|assets).*)",
       "destination": "/index.html"
     }
   ]
