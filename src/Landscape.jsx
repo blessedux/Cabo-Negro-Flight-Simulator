@@ -6,6 +6,7 @@ Command: npx gltfjsx@6.2.3 scene.glb
 import React, { useEffect, useMemo } from "react";
 import { MeshReflectorMaterial, useGLTF } from "@react-three/drei";
 import { Color, MeshStandardMaterial } from "three";
+import { MODELS } from "./config/assets";
 
 export function Landscape(props) {
   const { nodes, materials } = useGLTF(MODELS.scene);

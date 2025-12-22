@@ -23,6 +23,7 @@ import { CargoShip } from "./CargoShip";
 import { sampleTerrainHeight } from "./terrainHeightSampler";
 import { ClickableTerrainTile } from "./ClickableTerrainTile";
 import { AnimatedTile } from "./AnimatedTile";
+import { MODELS, TEXTURES } from "./config/assets";
 import { getCurrentExploreScene, subscribeToExploreScene } from "./SceneNavigator";
 import { beamPosition } from "./LocationBeam";
 import { setTileModalOpen } from "./TileModal";
