@@ -58,7 +58,6 @@ export function Scene3({ textureRotation = 0 }) {
       <PerspectiveCamera makeDefault position={[0.0, 35.0, 0.0]} fov={35} />
 
       <MountainRoadLandscape ref={terrainRef} textureRotation={textureRotation} />
-      <LocationBeam />
       <Compass />
       <CollisionDetector />
       

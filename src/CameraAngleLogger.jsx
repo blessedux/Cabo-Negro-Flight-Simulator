@@ -52,6 +52,14 @@ export function CameraAngleLogger({ enabled = true, logInterval = 1000 }) {
         fov: camera.fov,
       });
       
+      // Also log in cinematicScenes.js format for easy copy-paste
+      console.log('📋 CINEMATIC SCENES FORMAT:');
+      console.log(`camera: {
+  position: [${position.x.toFixed(3)}, ${position.y.toFixed(3)}, ${position.z.toFixed(3)}],
+  rotation: { pitch: ${euler.x.toFixed(4)}, yaw: ${euler.y.toFixed(4)}, roll: ${euler.z.toFixed(4)} },
+  fov: ${camera.fov}
+}`);
+      
       lastLogTime.current = now;
     }
   });

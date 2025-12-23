@@ -34,14 +34,14 @@ export const CINEMATIC_SCENES = {
     name: "Punta Arenas Context",
     purpose: "Geographic & human scale",
     camera: {
-      position: [0.052, 0.425, -0.934],
-      rotation: { pitch: -0.6844, yaw: -3.0242, roll: 0 },
-      fov: 40
+      position: [0.7970, 0.6590, -2.9540],
+      rotation: { pitch: -0.5800, yaw: 3.0050, roll: 0.0000 },
+      fov: 40.0
     },
     movement: {
       type: 'pullBack',
       axis: 'vertical',
-      startY: 0.425, // Start at new altitude
+      startY: 0.6590, // Start at new altitude
       endY: 4.2, // Smoothly rise to higher altitude
       speed: 0.015,
       duration: 20000, // 20 seconds for slower, smoother ascent
@@ -59,33 +59,6 @@ export const CINEMATIC_SCENES = {
     }
   },
   3: {
-    name: "Satellite View",
-    purpose: "Macro understanding & credibility",
-    camera: {
-      position: [0.0, 35.0, 0.0],
-      rotation: { pitch: -1.57, yaw: 0.0, roll: 0 },
-      fov: 35
-    },
-    movement: {
-      type: 'pullBack',
-      axis: 'vertical',
-      startY: 18,
-      endY: 35,
-      speed: 0.02,
-      duration: 9000, // 8-10s average
-      easing: 'linear'
-    },
-    text: {
-      title: "At the edge of the Pacific",
-      subtitle: "Connecting South America to global trade"
-    },
-    visualCues: {
-      earthCurvature: true,
-      clouds: true,
-      highlighted: true
-    }
-  },
-  4: {
     name: "Global Trade Route",
     purpose: "Maritime trade and Panama Canal alternative",
     camera: {
@@ -119,7 +92,7 @@ export const CINEMATIC_SCENES = {
       terrainVisible: true
     }
   },
-  5: {
+  4: {
     name: "Maritime Port Potential",
     purpose: "Motion, sustainability, power",
     camera: {
@@ -151,7 +124,7 @@ export const CINEMATIC_SCENES = {
       turbines: "assets/models/wind-turbines.glb"
     }
   },
-  6: {
+  5: {
     name: "Wind Energy",
     purpose: "Wind turbine close-up view",
     camera: {
@@ -190,7 +163,7 @@ export const CINEMATIC_SCENES = {
       turbine: "assets/models/wind_turbine.glb"
     }
   },
-  7: {
+  6: {
     name: "Data Center Potential",
     purpose: "Precision, future value, silence",
     camera: {
@@ -236,7 +209,7 @@ export const CINEMATIC_SCENES = {
       dataCenter: "assets/models/data-center.glb"
     }
   },
-  8: {
+  7: {
     name: "Synthesis / Investable Land",
     purpose: "Mental closure & conviction",
     camera: {

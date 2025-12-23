@@ -17,7 +17,8 @@ import { CoordinateRuler } from "../CoordinateRuler";
 import { useTexture } from "@react-three/drei";
 import { useRef } from "react";
 import { getCurrentExploreScene, subscribeToExploreScene } from "../SceneNavigator";
-import { TEXTURES } from "../config/assets";
+import { TEXTURES, MAPBOX_CONFIG } from "../config/assets";
+import { getPuntaArenasWorldPosition } from "../utils/tileCoordinates";
 
 export function Scene2({ textureRotation = 0 }) {
   // Scene 2: Punta Arenas Context - Slow pan orbit
@@ -73,23 +74,28 @@ export function Scene2({ textureRotation = 0 }) {
         showLabels={true} 
       />
       
-      {/* Clickable terrain tile - only show in free exploration mode */}
-      {!isCinematicMode() && (
-        <ClickableTerrainTile
-        terrainGroupRef={terrainRef}
-        tilePosition={[0, 0.0009, -0.33]} // X, Z position - moved -5 tiles north (5 * 11.48 * 0.01 = 0.574, north is negative Z) - Y will be calculated from terrain height
-        squareSize={0.05} // 1/4 of original size (0.2 / 4 = 0.05)
-        cameraTarget={{
-          position: [-0.072, 0.68, -1.175],
-          rotation: { pitch: -0.6719, yaw: -2.876, roll: 0 }
-        }}
-        title="Placeholder Title"
-        paragraph="This is a placeholder paragraph. Replace this with your actual content. The camera will animate to the specified position and angle when this tile is clicked."
-        ctaText="Learn More"
-        ctaUrl="https://example.com"
-        tagText="Click Me"
-        />
-      )}
+      {/* Clickable terrain tile - show in cinematic mode for Scene 2 (instead of title) */}
+      {isCinematicMode() && (() => {
+        const puntaArenasPos = getPuntaArenasWorldPosition(MAPBOX_CONFIG.terrainCenter, MAPBOX_CONFIG.terrainSize);
+        return (
+          <ClickableTerrainTile
+            terrainGroupRef={terrainRef}
+            tilePosition={[puntaArenasPos.x, 0.0009, puntaArenasPos.z]} // Punta Arenas position
+            squareSize={0.05} // 1/4 of original size (0.2 / 4 = 0.05)
+            cameraTarget={{
+              position: [-0.072, 0.68, -1.175],
+              rotation: { pitch: -0.6719, yaw: -2.876, roll: 0 }
+            }}
+            title="Punta Arenas"
+            paragraph="Southern Chile's strategic logistics gateway and port city, playing a crucial role in global trade routes. Punta Arenas serves as a vital connection point between the Pacific and Atlantic oceans, facilitating international commerce and serving as a key hub for shipping between Asia, the Americas, and Europe. The city's strategic location provides easy access to the rest of continental Chile, making it an essential node in the country's transportation and logistics network."
+            ctaText="Learn More"
+            ctaUrl="https://www.cabonegro.cl/en/contact"
+            tagText="Click Me"
+            imageUrl="/punta-arenas.webp"
+            imageLink="https://maps.app.goo.gl/pd6yvwQHaq3Y4hTV6"
+          />
+        );
+      })()}
 
       <directionalLight
         castShadow

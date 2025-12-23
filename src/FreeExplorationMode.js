@@ -1,8 +1,16 @@
+import { isMobile } from './utils/isMobile';
+
 // Free exploration mode state manager
 let isFreeExplorationMode = false;
 let freeModeCallbacks = [];
 
 export function setFreeExplorationMode(enabled) {
+  // Disable free exploration on mobile
+  if (enabled && isMobile()) {
+    console.log('Free exploration mode is not available on mobile devices');
+    return;
+  }
+  
   isFreeExplorationMode = enabled;
   // Notify all callbacks
   freeModeCallbacks.forEach(cb => {

@@ -84,6 +84,10 @@ export function setCargoShipRotation(rotation) {
   });
 }
 
+export function getCargoShipPosition() {
+  return { ...cargoShipPosition };
+}
+
 export function getCargoShipState() {
   return {
     position: { ...cargoShipPosition },

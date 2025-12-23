@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { setMenuOpen, setPaused } from './controls';
+import { setTileDebugEnabled, getTileDebugEnabled } from './TileDebugToggle';
 
 // Global state for toggles (can be moved to a context/store later)
 let fogEnabled = true;
@@ -28,6 +29,7 @@ export function getMusicEnabled() {
 export function PauseMenu() {
   const [fogOn, setFogOn] = useState(fogEnabled);
   const [musicOn, setMusicOn] = useState(musicEnabled);
+  const [tileDebugOn, setTileDebugOn] = useState(getTileDebugEnabled());
 
   const handleClose = () => {
     setMenuOpen(false);
@@ -44,6 +46,12 @@ export function PauseMenu() {
     const newValue = !musicOn;
     setMusicOn(newValue);
     setMusicEnabled(newValue);
+  };
+
+  const handleTileDebugToggle = () => {
+    const newValue = !tileDebugOn;
+    setTileDebugOn(newValue);
+    setTileDebugEnabled(newValue);
   };
 
   const handleBackToLanding = () => {
@@ -150,6 +158,11 @@ export function PauseMenu() {
             label="Music"
             enabled={musicOn}
             onChange={handleMusicToggle}
+          />
+          <ToggleButton
+            label="Tile Debug (Wireframe + Tags)"
+            enabled={tileDebugOn}
+            onChange={handleTileDebugToggle}
           />
         </div>
 

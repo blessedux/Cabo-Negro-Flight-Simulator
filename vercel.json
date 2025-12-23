@@ -38,10 +38,6 @@
     {
       "source": "/flight",
       "destination": "/index.html"
-    },
-    {
-      "source": "/terrain-3d-test",
-      "destination": "/index.html"
     }
   ]
 }

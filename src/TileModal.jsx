@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { getCurrentExploreScene } from './SceneNavigator';
+import { useIsMobile } from './utils/isMobile';
 
 // Global state for tile modal
 let tileModalState = {
@@ -47,6 +48,7 @@ export function subscribeToTileModal(callback) {
 
 export function TileModal() {
   const [modalState, setModalState] = React.useState(tileModalState);
+  const isMobileDevice = useIsMobile();
 
   useEffect(() => {
     const unsubscribe = subscribeToTileModal((state) => {
@@ -86,15 +88,19 @@ export function TileModal() {
     }
   };
 
-  const modalWidth = '30vw'; // 30% of viewport width (max on desktop)
-  const modalHeight = '75vh'; // 3/4 of viewport height
-  const marginLeft = '80px'; // Left margin
-  const marginRight = '80px'; // Right margin
+  // Mobile vs Desktop styling
+  const modalWidth = isMobileDevice ? '90vw' : '30vw'; // 90% on mobile, 30% on desktop
+  const modalHeight = isMobileDevice ? '60vh' : '75vh'; // 60% on mobile, 75% on desktop
+  const marginLeft = isMobileDevice ? 'auto' : '80px'; // Center on mobile
+  const marginRight = isMobileDevice ? 'auto' : '80px'; // Center on mobile
   
-  // Determine position based on modal state
-  const isRightAligned = modalState.position === 'right';
-  const leftStyle = isRightAligned ? 'auto' : marginLeft;
-  const rightStyle = isRightAligned ? marginRight : 'auto';
+  // Determine position based on modal state (desktop) or center (mobile)
+  const isRightAligned = !isMobileDevice && modalState.position === 'right';
+  const leftStyle = isMobileDevice ? '50%' : (isRightAligned ? 'auto' : marginLeft);
+  const rightStyle = isMobileDevice ? 'auto' : (isRightAligned ? marginRight : 'auto');
+  const transformStyle = isMobileDevice ? 'translate(-50%, -50%)' : 'translateY(-50%)';
+  const topStyle = isMobileDevice ? 'auto' : '50%';
+  const bottomStyle = isMobileDevice ? '20px' : 'auto';
 
   return (
     <div
@@ -110,22 +116,24 @@ export function TileModal() {
       }}
       onClick={handleClose}
     >
-      {/* Modal container - 45% width and 75% height, aligned left or right with glassmorphism background */}
+      {/* Modal container - responsive positioning */}
       <div
         style={{
           position: 'absolute',
-          top: '50%',
+          top: topStyle,
+          bottom: bottomStyle,
           left: leftStyle,
           right: rightStyle,
-          transform: 'translateY(-50%)',
+          transform: transformStyle,
           width: modalWidth,
           height: modalHeight,
+          maxHeight: isMobileDevice ? '60vh' : '75vh',
           background: 'rgba(100, 100, 100, 0.15)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           border: '1px solid rgba(255, 255, 255, 0.15)',
           borderRadius: '12px',
-          padding: '25px 35px',
+          padding: isMobileDevice ? '20px' : '25px 35px',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
           display: 'flex',
           flexDirection: 'column',
@@ -176,7 +184,7 @@ export function TileModal() {
         <h1
           style={{
             color: '#ffffff',
-            fontSize: '32px',
+            fontSize: isMobileDevice ? '24px' : '32px',
             fontWeight: 'bold',
             margin: 0,
             marginBottom: '15px',
@@ -242,7 +250,7 @@ export function TileModal() {
           <p
             style={{
               color: '#ffffff',
-              fontSize: '18px',
+              fontSize: isMobileDevice ? '14px' : '18px',
               fontWeight: '400',
               margin: 0,
               lineHeight: '1.6',

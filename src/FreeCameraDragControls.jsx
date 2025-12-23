@@ -7,7 +7,7 @@ import { getCameraAnimationState } from './CameraAnimator';
 import { beamPosition, beamHeight } from './LocationBeam';
 import { sampleTerrainHeight } from './terrainHeightSampler';
 import { isCinematicMode } from './CinematicCameraController';
-import { getFreeExplorationMode } from './FreeExplorationMode';
+import { getFreeExplorationMode, subscribeToFreeExplorationMode } from './FreeExplorationMode';
 
 // Constants for satellite follow mode
 const SPHERE_CENTER = new Vector3(0, 0, 0);
@@ -132,10 +132,44 @@ export function FreeCameraDragControls() {
   // Current rotation angles (Euler angles) - using refs
   const rotation = useRef({ yaw: 0, pitch: 0 });
   
+  // Track if we've initialized from current camera state when entering free mode
+  const hasInitializedFromCurrentState = useRef(false);
+  
   // Initialize rotation from camera's current orientation
+  // This runs when the component mounts or camera changes
   useEffect(() => {
     const euler = new Euler().setFromQuaternion(camera.quaternion, 'YXZ');
     rotation.current = { yaw: euler.y, pitch: euler.x };
+  }, [camera]);
+  
+  // When entering free exploration mode, preserve current camera position and rotation
+  useEffect(() => {
+    const unsubscribe = subscribeToFreeExplorationMode((enabled) => {
+      if (enabled) {
+        // When entering free exploration mode, capture current camera state
+        // This ensures smooth transition without camera jump
+        const euler = new Euler().setFromQuaternion(camera.quaternion, 'YXZ');
+        rotation.current = { yaw: euler.y, pitch: euler.x };
+        hasInitializedFromCurrentState.current = true;
+        
+        console.log('🎥 Entering free exploration mode - preserving camera state:', {
+          position: {
+            x: camera.position.x.toFixed(3),
+            y: camera.position.y.toFixed(3),
+            z: camera.position.z.toFixed(3)
+          },
+          rotation: {
+            yaw: rotation.current.yaw.toFixed(3),
+            pitch: rotation.current.pitch.toFixed(3)
+          }
+        });
+      } else {
+        // Reset flag when exiting free mode
+        hasInitializedFromCurrentState.current = false;
+      }
+    });
+    
+    return unsubscribe;
   }, [camera]);
   
   // Movement speed (reduced by half)

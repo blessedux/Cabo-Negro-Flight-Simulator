@@ -9,8 +9,11 @@ export function AnimatedTile({
 }) {
   const squareRef = useRef();
   
+  // Flip X coordinate to match flipped terrain (terrain is scaled [-1, 1, 1])
+  const flippedX = -tilePosition[0];
+  
   // Sample terrain height at this position
-  const terrainHeight = sampleTerrainHeight(tilePosition[0], tilePosition[2]);
+  const terrainHeight = sampleTerrainHeight(flippedX, tilePosition[2]);
   
   // Animate the square with pulsating blue light
   useFrame((state) => {
@@ -27,7 +30,7 @@ export function AnimatedTile({
       }
       
       // Position square at tile position, slightly above terrain
-      squareRef.current.position.set(tilePosition[0], terrainHeight + 0.01, tilePosition[2]);
+      squareRef.current.position.set(flippedX, terrainHeight + 0.01, tilePosition[2]);
     }
   });
 

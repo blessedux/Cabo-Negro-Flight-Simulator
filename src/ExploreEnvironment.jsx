@@ -4,7 +4,7 @@ import { PerspectiveCamera, Environment, useTexture, useGLTF } from "@react-thre
 import * as THREE from "three";
 import { EffectComposer, HueSaturation } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
-import { MountainRoadLandscape } from "./MountainRoadLandscape";
+import { MapboxTerrainTiles } from "./MapboxTerrainTiles";
 import { SphereEnv } from "./SphereEnv";
 import { MotionBlur } from "./MotionBlur";
 import { FreeCameraDragControls } from "./FreeCameraDragControls";
@@ -12,6 +12,8 @@ import { LocationBeam } from "./LocationBeam";
 import { Compass } from "./Compass";
 import { CollisionDetector } from "./CollisionDetector";
 import { CameraPositionLogger } from "./CameraPositionLogger";
+import { CameraAngleLogger } from "./CameraAngleLogger";
+import { Scene2CameraLogger } from "./Scene2CameraLogger";
 import { CameraAnimator } from "./CameraAnimator";
 import { CinematicCameraController, isCinematicMode } from "./CinematicCameraController";
 import { getFreeExplorationMode } from "./FreeExplorationMode";
@@ -23,10 +25,12 @@ import { CargoShip } from "./CargoShip";
 import { sampleTerrainHeight } from "./terrainHeightSampler";
 import { ClickableTerrainTile } from "./ClickableTerrainTile";
 import { AnimatedTile } from "./AnimatedTile";
-import { MODELS, TEXTURES } from "./config/assets";
+import { MODELS, TEXTURES, MAPBOX_CONFIG } from "./config/assets";
 import { getCurrentExploreScene, subscribeToExploreScene } from "./SceneNavigator";
 import { beamPosition } from "./LocationBeam";
 import { setTileModalOpen } from "./TileModal";
+import { ModelPositionEditor, getModelPosition } from "./ModelPositionEditor";
+import { getPuntaArenasWorldPosition } from "./utils/tileCoordinates";
 
 // Single Wind Turbine instance
 function WindTurbineInstance({ scene, position, scale, index }) {
@@ -37,14 +41,14 @@ function WindTurbineInstance({ scene, position, scale, index }) {
   useEffect(() => {
     if (!scene || !instanceRef.current) return;
     
-    console.log(`Setting up wind turbine ${index} at position:`, position);
+    // Setting up wind turbine (removed verbose logging)
     
     // Calculate bounding box
     const box = new THREE.Box3().setFromObject(scene);
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
     
-    console.log(`Turbine ${index} bounding box:`, { center, size });
+    // Turbine bounding box calculated (removed verbose logging)
     
     const scaledCenter = center.clone().multiplyScalar(scale);
     const scaledBottomY = box.min.y * scale;
@@ -88,7 +92,7 @@ function WindTurbineInstance({ scene, position, scale, index }) {
       }
     });
     
-    console.log(`Turbine ${index} positioned at:`, finalPosition, `terrain height:`, terrainHeight);
+    // Turbine positioned (removed verbose logging)
   }, [scene, position.x, position.y, position.z, scale, index]);
   
   // Handle click on wind turbine
@@ -107,14 +111,14 @@ function WindTurbineInstance({ scene, position, scale, index }) {
       turbineWorldPos.set(position.x, terrainHeight, position.z);
     }
     
-    // Scene 6 camera position: [0.344, 0.061, 0.296] with rotation { pitch: 0.1461, yaw: 2.7192, roll: 0 }
-    const scene6Position = [0.344, 0.061, 0.296];
-    const scene6Rotation = { pitch: 0.1461, yaw: 2.7192, roll: 0 };
+    // Scene 5 camera position: [0.344, 0.061, 0.296] with rotation { pitch: 0.1461, yaw: 2.7192, roll: 0 }
+    const scene5Position = [0.344, 0.061, 0.296];
+    const scene5Rotation = { pitch: 0.1461, yaw: 2.7192, roll: 0 };
     
-    // Animate camera to Scene 6 position, looking at the turbine during movement
+    // Animate camera to Scene 5 position, looking at the turbine during movement
     setCameraTarget(
-      scene6Position,
-      scene6Rotation,
+      scene5Position,
+      scene5Rotation,
       1500, // Default duration
       [turbineWorldPos.x, turbineWorldPos.y, turbineWorldPos.z] // Look at turbine during movement
     );
@@ -158,7 +162,7 @@ function WindTurbineInstance({ scene, position, scale, index }) {
   );
 }
 
-// Wind Turbines for Scene 6 (4 turbines total)
+// Wind Turbines for Scene 5 (4 turbines total)
 function WindTurbineModel({ currentScene }) {
   // Hooks must ALWAYS be called in the same order - call them unconditionally
   const { scene } = useGLTF(MODELS.windTurbine);
@@ -166,37 +170,43 @@ function WindTurbineModel({ currentScene }) {
   // Scale: half of current size (0.0025 / 2 = 0.00125)
   const turbineScale = 0.00125;
   
-  // Final turbine positions (from dev UI positioning)
-  const turbinePositions = useMemo(() => {
-    // Final positions - these are absolute positions from the UI
-    // The UI showed positions relative to origin, not beam position
-    // Turbine 1: X: 0.045, Z: 0.402
-    // Turbine 2: X: 0.165, Z: 0.462
-    // Turbine 3: X: 0.205, Z: 0.402
-    // Turbine 4: X: 0.245, Z: 0.502
-    return [
-      new THREE.Vector3(0.045, 0, 0.402),
-      new THREE.Vector3(0.165, 0, 0.462),
-      new THREE.Vector3(0.205, 0, 0.402),
-      new THREE.Vector3(0.245, 0, 0.502),
-    ];
+  // Turbine positions - can be edited via ModelPositionEditor
+  const [turbinePositionsState, setTurbinePositionsState] = useState([
+    getModelPosition('windTurbine1'),
+    getModelPosition('windTurbine2'),
+    getModelPosition('windTurbine3'),
+    getModelPosition('windTurbine4'),
+  ]);
+  
+  // Listen for position changes
+  useEffect(() => {
+    const handlePositionChange = () => {
+      setTurbinePositionsState([
+        getModelPosition('windTurbine1'),
+        getModelPosition('windTurbine2'),
+        getModelPosition('windTurbine3'),
+        getModelPosition('windTurbine4'),
+      ]);
+    };
+    window.addEventListener('modelPositionChanged', handlePositionChange);
+    return () => window.removeEventListener('modelPositionChanged', handlePositionChange);
   }, []);
+  
+  const turbinePositions = useMemo(() => {
+    return turbinePositionsState.map(pos => new THREE.Vector3(pos.x, pos.y, pos.z));
+  }, [turbinePositionsState]);
   
   // Debug logging
   useEffect(() => {
-    if (currentScene === 6 && scene) {
-      console.log('=== Wind Turbine Model Setup ===');
-      console.log('Scene:', scene);
-      console.log('Turbine scale:', turbineScale);
-      console.log('Number of turbines:', turbinePositions.length);
-      console.log('Turbine positions:', turbinePositions);
+    if (currentScene === 5 && scene) {
+      // Wind turbine model setup (removed verbose logging)
     }
   }, [currentScene, scene, turbineScale, turbinePositions]);
   
   // Conditionally render AFTER all hooks are called
-  // Show in Scene 6 or in free exploration mode
+  // Show in Scene 5 or in free exploration mode
   const isFreeMode = getFreeExplorationMode();
-  if ((currentScene !== 6 && !isFreeMode) || !scene) {
+  if ((currentScene !== 5 && !isFreeMode) || !scene) {
     return null;
   }
   
@@ -218,15 +228,15 @@ function WindTurbineModel({ currentScene }) {
   );
 }
 
-// Server Room Model for Scene 7
+// Server Room Model for Scene 6
 function ServerRoomModel({ currentScene, dataCenterModalOpenRef, dataCenterCameraPositionRef }) {
   const { scene } = useGLTF(MODELS.serverRoom);
   const groupRef = useRef();
   const clonedSceneRef = useRef(null);
   const ceilingMeshRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
-  const [ceilingHidden, setCeilingHidden] = useState(currentScene === 7); // Hide ceiling in Scene 7 by default
-  const ceilingOpacityRef = useRef(currentScene === 7 ? 0.0 : 1.0); // Start hidden in Scene 7
+  const [ceilingHidden, setCeilingHidden] = useState(currentScene === 6 || currentScene === 7); // Hide ceiling in Scene 6 and 7 by default
+  const ceilingOpacityRef = useRef((currentScene === 6 || currentScene === 7) ? 0.0 : 1.0); // Start hidden in Scene 6 and 7
   const fadeSpeed = 0.05; // Fade speed per frame
   const isFreeMode = getFreeExplorationMode();
   
@@ -239,25 +249,28 @@ function ServerRoomModel({ currentScene, dataCenterModalOpenRef, dataCenterCamer
     return Math.max(size.x, size.y, size.z);
   }, [scene]);
   
-  // Position the server room close to the light beam at terrain height
-  // Move it south (negative Z) by 3 times and east (positive X) by 5 times its current diameter
-  const serverRoomPosition = useMemo(() => {
-    // Start near beam position
-    const baseX = beamPosition.x + -0.2;
-    const baseZ = beamPosition.z + 0.1;
+  // Position the server room - can be edited via ModelPositionEditor
+  const [serverRoomPos, setServerRoomPos] = useState(() => {
+    const pos = getModelPosition('serverRoom');
+    const terrainHeight = sampleTerrainHeight(pos.x, pos.z);
+    return new THREE.Vector3(pos.x, terrainHeight, pos.z);
+  });
+  
+  // Listen for position changes
+  useEffect(() => {
+    const handlePositionChange = () => {
+      const pos = getModelPosition('serverRoom');
+      const terrainHeight = sampleTerrainHeight(pos.x, pos.z);
+      setServerRoomPos(new THREE.Vector3(pos.x, terrainHeight, pos.z));
+    };
     
-    // Current scale is 0.00125, so diameter at current scale
-    const scaledDiameter = modelDiameter * 0.00125;
-    
-    // Move east (positive X) by 5 times and south (negative Z) by 3 times the scaled diameter
-    const x = baseX + (scaledDiameter * 5);
-    const z = baseZ - (scaledDiameter * 3); // South is negative Z
-    
-    // Sample terrain height at this position
-    const terrainHeight = sampleTerrainHeight(x, z);
-    
-    return new THREE.Vector3(x, terrainHeight, z);
-  }, [modelDiameter]);
+    window.addEventListener('modelPositionChanged', handlePositionChange);
+    return () => {
+      window.removeEventListener('modelPositionChanged', handlePositionChange);
+    };
+  }, []);
+  
+  const serverRoomPosition = serverRoomPos;
   
   const serverRoomScale = 0.00125; // Half of previous size (0.0025 / 2 = 0.00125)
   
@@ -304,17 +317,17 @@ function ServerRoomModel({ currentScene, dataCenterModalOpenRef, dataCenterCamer
         });
       }
       
-      console.log('Ceiling found:', ceilingMesh.name || 'unnamed mesh');
+      // Ceiling found (removed verbose logging)
     } else {
       console.warn('Could not find ceiling mesh');
     }
   };
   
-  // Animate ceiling fade in/out (ceiling is removed in Scene 7, so this won't run there)
+  // Animate ceiling fade in/out (ceiling is removed in Scene 6, so this won't run there)
   useFrame(() => {
     if (!ceilingMeshRef.current) return;
     
-    // Keep ceiling hidden if state says so (Scene 7 removes it completely, so this is for other scenes)
+      // Keep ceiling hidden if state says so (Scene 6 removes it completely, so this is for other scenes)
     const targetOpacity = ceilingHidden ? 0.0 : 1.0;
     const currentOpacity = ceilingOpacityRef.current;
     
@@ -339,7 +352,7 @@ function ServerRoomModel({ currentScene, dataCenterModalOpenRef, dataCenterCamer
   
   // Update ceiling state when scene changes
   useEffect(() => {
-    if (currentScene === 7) {
+    if (currentScene === 6 || currentScene === 7) {
       setCeilingHidden(true);
       ceilingOpacityRef.current = 0.0;
     } else {
@@ -351,8 +364,8 @@ function ServerRoomModel({ currentScene, dataCenterModalOpenRef, dataCenterCamer
   // Listen for modal close events to restore ceiling if needed
   useEffect(() => {
     const handleModalClose = () => {
-      // Only restore ceiling if we're not in Scene 7
-      if (currentScene !== 7) {
+      // Only restore ceiling if we're not in Scene 6 or 7
+      if (currentScene !== 6 && currentScene !== 7) {
         setCeilingHidden(false);
         ceilingOpacityRef.current = 1.0;
       }
@@ -373,7 +386,7 @@ function ServerRoomModel({ currentScene, dataCenterModalOpenRef, dataCenterCamer
     e.stopPropagation();
     setOrbitPaused(true);
     
-    // Always hide ceiling when clicking on data center (same as Scene 7)
+    // Always hide ceiling when clicking on data center (same as Scene 6)
     setCeilingHidden(true);
     ceilingOpacityRef.current = 0.0;
     
@@ -382,7 +395,7 @@ function ServerRoomModel({ currentScene, dataCenterModalOpenRef, dataCenterCamer
     dataCenterCameraPositionRef.current = new THREE.Vector3(...targetCamPos);
     dataCenterModalOpenRef.current = true;
     
-    // Position camera to look inside the data center model (same as Scene 7 ending)
+    // Position camera to look inside the data center model (same as Scene 6 ending)
     // Pass the data center position as lookAtTarget so camera looks at it during movement
     setCameraTarget(
       targetCamPos,
@@ -417,8 +430,8 @@ function ServerRoomModel({ currentScene, dataCenterModalOpenRef, dataCenterCamer
   
   // Clone the scene and make it clickable - MUST be called before early return (Rules of Hooks)
   const clonedScene = useMemo(() => {
-    // Show in Scene 7 or in free exploration mode
-    if (!scene || (currentScene !== 7 && !isFreeMode)) return null;
+    // Show in Scene 6 or in free exploration mode
+    if (!scene || (currentScene !== 6 && !isFreeMode)) return null;
     const cloned = scene.clone();
     clonedSceneRef.current = cloned;
     
@@ -449,12 +462,12 @@ function ServerRoomModel({ currentScene, dataCenterModalOpenRef, dataCenterCamer
       }
     });
     
-    // In Scene 7, completely remove the ceiling mesh instead of just hiding it
-    if (currentScene === 7 && ceilingMesh) {
+    // In Scene 6 and 7, completely remove the ceiling mesh instead of just hiding it
+    if ((currentScene === 6 || currentScene === 7) && ceilingMesh) {
       // Remove the ceiling mesh from its parent
       if (ceilingMesh.parent) {
         ceilingMesh.parent.remove(ceilingMesh);
-        console.log('Ceiling removed in Scene 7');
+        // Ceiling removed (removed verbose logging)
       }
     } else if (ceilingMesh) {
       // Store reference for fade animation in other scenes
@@ -484,19 +497,14 @@ function ServerRoomModel({ currentScene, dataCenterModalOpenRef, dataCenterCamer
   }, [scene, isFreeMode, currentScene]);
   
   useEffect(() => {
-    if (currentScene === 7 && scene && groupRef.current) {
-      console.log('=== Server Room Model Setup ===');
-      console.log('Scene:', scene);
-      console.log('Server room position:', serverRoomPosition);
-      console.log('Server room scale:', serverRoomScale);
-      console.log('Beam position:', beamPosition);
-      console.log('Free mode:', isFreeMode);
+    if ((currentScene === 6 || currentScene === 7) && scene && groupRef.current) {
+      // Server room model setup (removed verbose logging)
     }
   }, [currentScene, scene, serverRoomPosition, serverRoomScale, isFreeMode]);
   
   // Early return AFTER all hooks are called
-  // Show in Scene 7 or in free exploration mode
-  if ((currentScene !== 7 && !isFreeMode) || !scene || !clonedScene) {
+  // Show in Scene 6 (Data Center), Scene 7 (Synthesis - shows all infrastructure), or in free exploration mode
+  if ((currentScene !== 6 && currentScene !== 7 && !isFreeMode) || !scene || !clonedScene) {
     return null;
   }
   
@@ -530,10 +538,10 @@ function ExploreModels({ currentScene }) {
   // Wind Turbine Models (Scene 5)
   // const turbinesModel = useGLTF("assets/models/wind-turbines.glb");
   
-  // Data Center Models (Scene 7)
+  // Data Center Models (Scene 6)
   // const dataCenterModel = useGLTF("assets/models/data-center.glb");
   
-  // Synthesis Models (Scene 8) - All infrastructure visible
+  // Synthesis Models (Scene 7) - All infrastructure visible
   // return (
   //   <group>
   //     {/* Maritime Terminal */}
@@ -549,125 +557,6 @@ function ExploreModels({ currentScene }) {
   // );
   
   return null; // Models not available yet
-}
-
-// Terrain 3D component for Scene 6
-function Terrain3D({ terrainRef }) {
-  const { scene } = useGLTF(MODELS.terrain3d);
-  const groupRef = useRef();
-  
-  // Debug logging and visibility fixes
-  useEffect(() => {
-    if (scene && groupRef.current) {
-      console.log('=== Terrain 3D Model Loaded ===');
-      console.log('Scene:', scene);
-      
-      // Log all meshes in the model and ensure visibility
-      let meshCount = 0;
-      let totalVertices = 0;
-      scene.traverse((child) => {
-        if (child.isMesh) {
-          meshCount++;
-          const vertices = child.geometry?.attributes?.position?.count || 0;
-          totalVertices += vertices;
-          console.log(`Mesh ${meshCount}:`, {
-            name: child.name,
-            vertices: vertices,
-            material: child.material?.name || 'unnamed',
-            position: child.position,
-            scale: child.scale,
-            visible: child.visible
-          });
-          
-          // Force visibility
-          child.visible = true;
-          
-          // Ensure material is visible and properly configured
-          if (child.material) {
-            if (Array.isArray(child.material)) {
-              child.material.forEach(mat => {
-                if (mat) {
-                  mat.transparent = false;
-                  mat.opacity = 1.0;
-                  mat.visible = true;
-                  // Ensure material has proper color
-                  if (mat.color) {
-                    mat.color.setRGB(1, 1, 1);
-                  }
-                }
-              });
-            } else {
-              child.material.transparent = false;
-              child.material.opacity = 1.0;
-              child.material.visible = true;
-              if (child.material.color) {
-                child.material.color.setRGB(1, 1, 1);
-              }
-            }
-          }
-        }
-      });
-      
-      console.log(`Total meshes: ${meshCount}, Total vertices: ${totalVertices.toLocaleString()}`);
-      
-      // Calculate bounding box
-      const box = new THREE.Box3().setFromObject(scene);
-      if (!box.isEmpty()) {
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
-        console.log('Bounding box:', { center, size, min: box.min, max: box.max });
-        
-        // Center the model if needed
-        if (Math.abs(center.x) > 0.1 || Math.abs(center.z) > 0.1) {
-          console.log('Centering terrain model...');
-          scene.position.set(-center.x, -center.y, -center.z);
-        }
-        
-        // Check model size
-        const maxDim = Math.max(size.x, size.y, size.z);
-        console.log(`Max dimension: ${maxDim.toFixed(2)} units`);
-        
-        // Scale down if model is too large (terrain models are often in meters/km)
-        // Scale to approximately 40 units to match scene scale
-        if (maxDim > 100) {
-          const scaleFactor = 40 / maxDim; // Target ~40 units max dimension
-          console.log(`Scaling terrain model down by factor: ${scaleFactor.toFixed(6)}`);
-          scene.scale.set(scaleFactor, scaleFactor, scaleFactor);
-          
-          // Recalculate after scaling
-          const newBox = new THREE.Box3().setFromObject(scene);
-          const newSize = newBox.getSize(new THREE.Vector3());
-          const newMaxDim = Math.max(newSize.x, newSize.y, newSize.z);
-          console.log(`Scaled max dimension: ${newMaxDim.toFixed(2)} units`);
-        } else if (maxDim < 0.1) {
-          console.warn('Model is very small, might need scaling up');
-        }
-      } else {
-        console.warn('Bounding box is empty - model might not have geometry');
-      }
-      
-      // Ensure group is visible
-      groupRef.current.visible = true;
-    }
-  }, [scene]);
-  
-  // Set terrainRef to the group so ClickableTerrainTile can use it
-  useEffect(() => {
-    if (terrainRef && groupRef.current) {
-      terrainRef.current = groupRef.current;
-    }
-  }, [terrainRef]);
-  
-  if (!scene) {
-    console.warn('Terrain3D: Scene not loaded yet');
-    return null;
-  }
-  
-  return (
-    <group ref={groupRef} visible={true}>
-      <primitive object={scene.clone()} />
-    </group>
-  );
 }
 
 export function ExploreEnvironment({ textureRotation = 0 }) {
@@ -740,13 +629,15 @@ export function ExploreEnvironment({ textureRotation = 0 }) {
     }
   });
   
-  // Check if we're on Scene 6
-  const isScene6 = currentScene === 6;
-  
   // Debug logging for scene changes
   useEffect(() => {
-    console.log(`Current scene: ${currentScene}, Using terrain-3d: ${isScene6}`);
-  }, [currentScene, isScene6]);
+    // Current scene updated (removed verbose logging)
+    if (currentScene === 2) {
+      // Scene 2 camera logging enabled (removed verbose logging)
+      console.log('💡 Press "L" key to log current camera position and angle for Scene 2');
+      console.log('📊 Camera info will also auto-log every 2 seconds');
+    }
+  }, [currentScene]);
   
   
   return (
@@ -760,6 +651,10 @@ export function ExploreEnvironment({ textureRotation = 0 }) {
       <ExploreCameraDataUpdater />
       <CameraAnimator />
       <CameraPositionLogger />
+      {/* Enable camera angle logging for Scene 2 (Punta Arenas) */}
+      {currentScene === 2 && <CameraAngleLogger enabled={true} logInterval={2000} />}
+      {/* Keyboard shortcut to log camera position for Scene 2 (Press 'L') */}
+      <Scene2CameraLogger />
       
       {/* Environment */}
       <SphereEnv />
@@ -771,8 +666,8 @@ export function ExploreEnvironment({ textureRotation = 0 }) {
       <PerspectiveCamera makeDefault position={[0, 3.5, 6.5]} fov={40} near={0.01} />
       
       {/* Terrain - the main 3D environment */}
-      {/* Use regular terrain for all scenes (including Scene 6) */}
-      <MountainRoadLandscape 
+      {/* Use regular terrain for all scenes (including Scene 5) */}
+      <MapboxTerrainTiles 
         ref={terrainRef} 
         textureRotation={textureRotation}
         onClick={handleTerrainClick}
@@ -798,26 +693,31 @@ export function ExploreEnvironment({ textureRotation = 0 }) {
       <Satellites />
       
       {/* UI Elements */}
-      {/* Only show LocationBeam in cinematic mode (NOT free exploration) and NOT in Scene 2, Scene 6, or Scene 7 */}
-      {!getFreeExplorationMode() && currentScene !== 2 && currentScene !== 6 && currentScene !== 7 && <LocationBeam />}
+      {/* Show LocationBeam in all modes except Scene 2, Scene 5, or Scene 6 */}
+      {currentScene !== 2 && currentScene !== 5 && currentScene !== 6 && <LocationBeam />}
       
       {/* Animated blue tile on Punta Arenas for Scene 2 (visible but not clickable) */}
-      {!getFreeExplorationMode() && currentScene === 2 && (
-        <AnimatedTile
-          terrainGroupRef={terrainRef}
-          tilePosition={[0, 0, -0.33]} // Punta Arenas position (same as Scene 2's clickable tile)
-          squareSize={0.05}
-        />
-      )}
+      {!getFreeExplorationMode() && currentScene === 2 && (() => {
+        const puntaArenasPos = getPuntaArenasWorldPosition(MAPBOX_CONFIG.terrainCenter, MAPBOX_CONFIG.terrainSize);
+        return (
+          <AnimatedTile
+            terrainGroupRef={terrainRef}
+            tilePosition={[puntaArenasPos.x, 0, puntaArenasPos.z]} // Punta Arenas position
+            squareSize={0.05}
+          />
+        );
+      })()}
       <Compass />
       <CollisionDetector />
       
       {/* Clickable terrain tile - only show in free exploration mode */}
-      {getFreeExplorationMode() && (
-        <ClickableTerrainTile
-          terrainGroupRef={terrainRef}
-          tilePosition={[0, 0.0009, -0.33]}
-          squareSize={0.05}
+      {getFreeExplorationMode() && (() => {
+        const puntaArenasPos = getPuntaArenasWorldPosition(MAPBOX_CONFIG.terrainCenter, MAPBOX_CONFIG.terrainSize);
+        return (
+          <ClickableTerrainTile
+            terrainGroupRef={terrainRef}
+            tilePosition={[puntaArenasPos.x, 0.0009, puntaArenasPos.z]}
+            squareSize={0.05}
           cameraTarget={{
             position: [-0.072, 0.68, -1.175],
             rotation: { pitch: -0.6719, yaw: -2.876, roll: 0 }
@@ -830,7 +730,8 @@ export function ExploreEnvironment({ textureRotation = 0 }) {
           imageUrl="/punta-arenas.webp"
           imageLink="https://maps.app.goo.gl/pd6yvwQHaq3Y4hTV6"
         />
-      )}
+        );
+      })()}
       
       {/* Lighting */}
       <directionalLight
@@ -867,7 +768,6 @@ export function ExploreEnvironment({ textureRotation = 0 }) {
 // useGLTF.preload("assets/models/ships.glb");
 // useGLTF.preload("assets/models/wind-turbines.glb");
 // useGLTF.preload("assets/models/data-center.glb");
-useGLTF.preload(MODELS.terrain3d);
 useGLTF.preload(MODELS.windTurbine);
 useGLTF.preload(MODELS.serverRoom);
 

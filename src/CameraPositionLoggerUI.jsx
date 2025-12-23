@@ -19,9 +19,16 @@ export function CameraPositionLoggerUI() {
   }, []);
 
   const copyToClipboard = () => {
-    const text = `position: [${position.x}, ${position.y}, ${position.z}],\nrotation: { pitch: ${rotation.pitch}, yaw: ${rotation.yaw}, roll: ${rotation.roll} }`;
+    const text = `position: [${position.x.toFixed(4)}, ${position.y.toFixed(4)}, ${position.z.toFixed(4)}],\nrotation: { pitch: ${rotation.pitch.toFixed(4)}, yaw: ${rotation.yaw.toFixed(4)}, roll: ${rotation.roll.toFixed(4)} }`;
     navigator.clipboard.writeText(text);
     alert('Camera data copied to clipboard!');
+  };
+
+  const copyCinematicFormat = () => {
+    // Format for cinematic scenes config
+    const text = `position: [${position.x.toFixed(4)}, ${position.y.toFixed(4)}, ${position.z.toFixed(4)}],\nrotation: { pitch: ${rotation.pitch.toFixed(4)}, yaw: ${rotation.yaw.toFixed(4)}, roll: ${rotation.roll.toFixed(4)} },\nfov: ${fov.toFixed(1)}`;
+    navigator.clipboard.writeText(text);
+    alert('Camera data (cinematic format) copied to clipboard!');
   };
 
   return (
@@ -49,19 +56,19 @@ export function CameraPositionLoggerUI() {
       <div style={{ marginBottom: '8px' }}>
         <div style={{ color: '#aaa', marginBottom: '4px' }}>Position:</div>
         <div>
-          X: {position.x}, Y: {position.y}, Z: {position.z}
+          X: {position.x.toFixed(4)}, Y: {position.y.toFixed(4)}, Z: {position.z.toFixed(4)}
         </div>
       </div>
       <div style={{ marginBottom: '10px' }}>
         <div style={{ color: '#aaa', marginBottom: '4px' }}>Rotation:</div>
         <div>
-          Pitch: {rotation.pitch}
+          Pitch: {rotation.pitch.toFixed(4)}
         </div>
         <div>
-          Yaw: {rotation.yaw}
+          Yaw: {rotation.yaw.toFixed(4)}
         </div>
         <div>
-          Roll: {rotation.roll}
+          Roll: {rotation.roll.toFixed(4)}
         </div>
       </div>
       
@@ -96,29 +103,54 @@ export function CameraPositionLoggerUI() {
         </div>
       </div>
       
-      <button
-        onClick={copyToClipboard}
-        style={{
-          width: '100%',
-          padding: '8px',
-          background: 'rgba(100, 150, 255, 0.8)',
-          border: 'none',
-          borderRadius: '5px',
-          color: 'white',
-          cursor: 'pointer',
-          fontSize: '11px',
-          fontWeight: 'bold',
-          transition: 'all 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          e.target.style.background = 'rgba(100, 150, 255, 1)';
-        }}
-        onMouseLeave={(e) => {
-          e.target.style.background = 'rgba(100, 150, 255, 0.8)';
-        }}
-      >
-        Copy to Clipboard
-      </button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <button
+          onClick={copyToClipboard}
+          style={{
+            width: '100%',
+            padding: '8px',
+            background: 'rgba(100, 150, 255, 0.8)',
+            border: 'none',
+            borderRadius: '5px',
+            color: 'white',
+            cursor: 'pointer',
+            fontSize: '11px',
+            fontWeight: 'bold',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.background = 'rgba(100, 150, 255, 1)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.background = 'rgba(100, 150, 255, 0.8)';
+          }}
+        >
+          Copy Position & Rotation
+        </button>
+        <button
+          onClick={copyCinematicFormat}
+          style={{
+            width: '100%',
+            padding: '8px',
+            background: 'rgba(150, 100, 255, 0.8)',
+            border: 'none',
+            borderRadius: '5px',
+            color: 'white',
+            cursor: 'pointer',
+            fontSize: '11px',
+            fontWeight: 'bold',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.background = 'rgba(150, 100, 255, 1)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.background = 'rgba(150, 100, 255, 0.8)';
+          }}
+        >
+          Copy Full Config (with FOV)
+        </button>
+      </div>
     </div>
   );
 }

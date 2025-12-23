@@ -4,12 +4,14 @@ import { getCurrentExploreScene, subscribeToExploreScene } from './SceneNavigato
 import { getScene } from './cinematicScenes';
 import { useNavigate } from 'react-router-dom';
 import { setFreeExplorationMode } from './FreeExplorationMode';
+import { useIsMobile } from './utils/isMobile';
 
 export function SceneTextOverlay() {
   const [currentSceneId, setCurrentSceneId] = useState(getCurrentSceneId() || getCurrentExploreScene());
   const [isVisible, setIsVisible] = useState(false);
   const [textData, setTextData] = useState(null);
   const navigate = useNavigate();
+  const isMobileDevice = useIsMobile();
 
   // Handle free exploration button click
   const handleFreeExplore = (e) => {
@@ -73,6 +75,11 @@ export function SceneTextOverlay() {
     return null;
   }
 
+  // Hide title overlay for Scene 2 (show modal instead)
+  if (currentSceneId === 2) {
+    return null;
+  }
+
   // Determine alignment based on scene
   // Scene 1: left aligned, Scene 2: right aligned, others: center
   const getAlignment = () => {
@@ -102,7 +109,7 @@ export function SceneTextOverlay() {
 
   const alignment = getAlignment();
 
-  const isScene8 = currentSceneId === 8;
+  const isScene9 = currentSceneId === 9; // Synthesis scene (final scene with buttons)
 
   return (
     <div
@@ -111,7 +118,7 @@ export function SceneTextOverlay() {
         bottom: '25%',
         ...alignment,
         zIndex: 2000,
-        pointerEvents: isScene8 ? 'auto' : 'none', // Allow pointer events for Scene 8 buttons
+        pointerEvents: isScene9 ? 'auto' : 'none', // Allow pointer events for Scene 9 buttons
         opacity: isVisible ? 1 : 0,
         transition: 'opacity 0.8s ease-in-out',
       }}
@@ -146,7 +153,7 @@ export function SceneTextOverlay() {
             fontSize: '16px',
             fontWeight: '300',
             letterSpacing: '0.02em',
-            margin: isScene8 ? '0 0 20px 0' : 0,
+            margin: isScene9 ? '0 0 20px 0' : 0,
             fontFamily: 'system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif',
             fontStyle: 'italic',
             pointerEvents: 'none',
@@ -155,8 +162,8 @@ export function SceneTextOverlay() {
           {textData.subtitle}
         </p>
         
-        {/* Scene 8: Exploration buttons */}
-        {isScene8 && (
+        {/* Scene 9: Exploration buttons - hide free explore on mobile */}
+        {isScene9 && (
           <div
             style={{
               display: 'flex',
@@ -165,33 +172,35 @@ export function SceneTextOverlay() {
               marginTop: '20px',
             }}
           >
-            <button
-              onClick={handleFreeExplore}
-              style={{
-                padding: '14px 24px',
-                background: 'rgba(100, 200, 100, 0.9)',
-                border: '2px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '8px',
-                color: '#ffffff',
-                cursor: 'pointer',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                transition: 'all 0.2s',
-                width: '100%',
-                textShadow: '1px 1px 4px rgba(0, 0, 0, 0.3)',
-                fontFamily: 'system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(100, 200, 100, 1)';
-                e.target.style.transform = 'scale(1.02)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(100, 200, 100, 0.9)';
-                e.target.style.transform = 'scale(1)';
-              }}
-            >
-              Free Explore the Area
-            </button>
+            {!isMobileDevice && (
+              <button
+                onClick={handleFreeExplore}
+                style={{
+                  padding: '14px 24px',
+                  background: 'rgba(100, 200, 100, 0.9)',
+                  border: '2px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '8px',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  transition: 'all 0.2s',
+                  width: '100%',
+                  textShadow: '1px 1px 4px rgba(0, 0, 0, 0.3)',
+                  fontFamily: 'system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(100, 200, 100, 1)';
+                  e.target.style.transform = 'scale(1.02)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'rgba(100, 200, 100, 0.9)';
+                  e.target.style.transform = 'scale(1)';
+                }}
+              >
+                Free Explore the Area
+              </button>
+            )}
             <button
               onClick={handlePilot}
               style={{

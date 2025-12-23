@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { PauseMenu } from "./PauseMenu";
 import { Navbar } from "./Navbar";
 import { ExplorerControlMenu } from "./ExplorerControlMenu";
+import { ModelPositionEditor } from "./ModelPositionEditor";
 import { SceneNavigator, getCurrentExploreScene, subscribeToExploreScene, setCurrentExploreScene } from "./SceneNavigator";
 import { SceneTextOverlay } from "./SceneTextOverlay";
 import { TileModal, setTileModalOpen } from "./TileModal";
@@ -18,11 +19,19 @@ import {
   toggleFreeExplorationMode,
   setFreeExplorationMode 
 } from "./FreeExplorationMode";
+import { isMobile } from "./utils/isMobile";
 import * as THREE from "three";
 
 export function ExploreScene() {
   const [menuOpen, setMenuOpen] = useState(isMenuOpen);
   const [isFreeMode, setIsFreeMode] = useState(getFreeExplorationMode());
+  
+  // Disable free exploration on mobile
+  useEffect(() => {
+    if (isMobile() && getFreeExplorationMode()) {
+      setFreeExplorationMode(false);
+    }
+  }, []);
 
   useEffect(() => {
     // Subscribe to menu state changes
@@ -50,7 +59,8 @@ export function ExploreScene() {
         startCinematicScene(scene);
       }
       
-      // Close any open modals when scene changes (buttons are now in SceneTextOverlay for Scene 8)
+      // Note: Satellite Operations scene removed - no auto-modal needed
+      // Close any open modals when scene changes
       setTileModalOpen(false);
     });
     
@@ -67,8 +77,8 @@ export function ExploreScene() {
         return;
       }
       
-      // Spacebar: Toggle free exploration mode
-      if (e.code === 'Space') {
+      // Spacebar: Toggle free exploration mode (disabled on mobile)
+      if (e.code === 'Space' && !isMobile()) {
         e.preventDefault();
         toggleFreeExplorationMode();
       }
@@ -78,12 +88,12 @@ export function ExploreScene() {
         if (e.code === 'ArrowLeft') {
           e.preventDefault();
           const currentScene = getCurrentExploreScene();
-          const newScene = currentScene <= 1 ? 8 : currentScene - 1;
+          const newScene = currentScene <= 1 ? 7 : currentScene - 1;
           setCurrentExploreScene(newScene);
         } else if (e.code === 'ArrowRight') {
           e.preventDefault();
           const currentScene = getCurrentExploreScene();
-          const newScene = currentScene >= 8 ? 1 : currentScene + 1;
+          const newScene = currentScene >= 7 ? 1 : currentScene + 1;
           setCurrentExploreScene(newScene);
         }
       }
@@ -104,6 +114,7 @@ export function ExploreScene() {
       <TutorialOverlay />
       <Navbar />
       <ExplorerControlMenu />
+      <ModelPositionEditor />
       
       {/* Scene Navigator - fade out in free mode */}
       <div

@@ -32,12 +32,15 @@ export function ClickableTerrainTile({
   useEffect(() => {
     if (!terrainGroupRef?.current) return;
     
+    // Flip X coordinate to match flipped terrain (terrain is scaled [-1, 1, 1])
+    const flippedX = -tilePosition[0];
+    
     // Sample terrain height at this position
-    const terrainHeight = sampleTerrainHeight(tilePosition[0], tilePosition[2]);
+    const terrainHeight = sampleTerrainHeight(flippedX, tilePosition[2]);
     const worldY = terrainHeight;
     
     // Find the closest mesh to this position
-    const targetPos = new Vector3(tilePosition[0], worldY, tilePosition[2]);
+    const targetPos = new Vector3(flippedX, worldY, tilePosition[2]);
     let closestMesh = null;
     let closestDistance = Infinity;
     
@@ -76,7 +79,7 @@ export function ClickableTerrainTile({
       
       // Use raycaster to find exact surface point
       raycasterRef.current.set(
-        new Vector3(tilePosition[0], 100, tilePosition[2]),
+        new Vector3(flippedX, 100, tilePosition[2]),
         new Vector3(0, -1, 0)
       );
       const intersects = raycasterRef.current.intersectObject(closestMesh, true);
@@ -86,7 +89,7 @@ export function ClickableTerrainTile({
         setTagPosition(surfacePoint);
       } else {
         // Fallback to mesh position + terrain height
-        setTagPosition(new Vector3(tilePosition[0], worldY, tilePosition[2]));
+        setTagPosition(new Vector3(flippedX, worldY, tilePosition[2]));
       }
       
       // Note: Click handlers will be on the square mesh, not the terrain mesh

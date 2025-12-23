@@ -165,8 +165,13 @@ export function CinematicCameraController() {
     dollyProgress: 0,
     trackingProgress: 0,
     staticDrift: { x: 0, y: 0, z: 0 },
-    pullBackProgress: 0
+    pullBackProgress: 0,
+    satelliteTime: 0 // Track accumulated time for satellite orbit (frame-based)
   });
+  
+  // Scroll zoom momentum state
+  const scrollVelocityRef = useRef(0);
+  const targetDistanceRef = useRef(null);
 
   // Store camera reference globally for transitions
   useEffect(() => {
@@ -196,11 +201,10 @@ export function CinematicCameraController() {
     };
   }, [camera]);
 
-  // Scroll wheel support for zooming in/out (moving camera forward/backward)
+  // Scroll wheel support for zooming with momentum (drone camera feel)
   useEffect(() => {
-    const scrollSpeed = 0.1; // How fast to move per scroll unit
-    const minDistance = 0.5; // Minimum distance from terrain (close to ground)
-    const maxDistance = 15.0; // Maximum distance (1500m = 15 units in scene scale)
+    const scrollSpeed = 0.15; // Base scroll speed
+    const maxMomentum = 2.0; // Maximum momentum multiplier
     
     const handleWheel = (e) => {
       // Only allow scrolling when cinematic mode is active
@@ -208,45 +212,22 @@ export function CinematicCameraController() {
       
       e.preventDefault();
       
-      // Get camera's forward direction (where it's looking)
-      const forward = new Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-      
       // Calculate scroll delta (normalize for different browsers)
       const delta = e.deltaY > 0 ? scrollSpeed : -scrollSpeed;
       
-      // Calculate where the camera is looking at (terrain center)
+      // Add to velocity with momentum
+      scrollVelocityRef.current += delta;
+      scrollVelocityRef.current = Math.max(-maxMomentum * scrollSpeed, Math.min(maxMomentum * scrollSpeed, scrollVelocityRef.current));
+      
       // Use beam position as the reference point for distance calculation
       const lookAtPoint = beamPosition.clone();
-      
-      // Calculate current distance from look-at point
       const currentDistance = camera.position.distanceTo(lookAtPoint);
       
-      // Calculate new position
-      const newPosition = camera.position.clone().add(forward.multiplyScalar(delta));
-      
-      // Calculate new distance
-      const newDistance = newPosition.distanceTo(lookAtPoint);
-      
-      // Clamp distance to min/max
-      if (newDistance < minDistance) {
-        // Too close, move back
-        const direction = newPosition.clone().sub(lookAtPoint).normalize();
-        newPosition.copy(lookAtPoint).add(direction.multiplyScalar(minDistance));
-      } else if (newDistance > maxDistance) {
-        // Too far, move forward
-        const direction = newPosition.clone().sub(lookAtPoint).normalize();
-        newPosition.copy(lookAtPoint).add(direction.multiplyScalar(maxDistance));
-      }
-      
-      // Also check terrain height to ensure minimum distance from ground
-      const terrainHeight = sampleTerrainHeight(newPosition.x, newPosition.z);
-      const minHeightAboveTerrain = 0.3; // Minimum 30cm above terrain
-      if (newPosition.y < terrainHeight + minHeightAboveTerrain) {
-        newPosition.y = terrainHeight + minHeightAboveTerrain;
-      }
-      
-      // Apply new position
-      camera.position.copy(newPosition);
+      // Calculate target distance based on velocity
+      targetDistanceRef.current = currentDistance - scrollVelocityRef.current;
+      const minDistance = 0.5;
+      const maxDistance = 15.0;
+      targetDistanceRef.current = Math.max(minDistance, Math.min(maxDistance, targetDistanceRef.current));
     };
     
     window.addEventListener('wheel', handleWheel, { passive: false });
@@ -257,6 +238,48 @@ export function CinematicCameraController() {
   }, [camera]);
 
   useFrame((state, delta) => {
+    // Apply scroll zoom momentum (drone camera feel)
+    if (isCinematicActive && !isTransitioning && targetDistanceRef.current !== null) {
+      const momentumDecay = 0.92; // Momentum decay per frame
+      const minDistance = 0.5;
+      const maxDistance = 15.0;
+      
+      // Get camera's forward direction
+      const forward = new Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+      const lookAtPoint = beamPosition.clone();
+      const currentDistance = camera.position.distanceTo(lookAtPoint);
+      
+      // Smoothly interpolate towards target distance
+      const distanceDiff = targetDistanceRef.current - currentDistance;
+      const moveAmount = distanceDiff * 0.1; // Smooth interpolation
+      
+      if (Math.abs(distanceDiff) > 0.01) {
+        const newPosition = camera.position.clone().add(forward.multiplyScalar(-moveAmount));
+        const newDistance = newPosition.distanceTo(lookAtPoint);
+        
+        // Clamp distance
+        if (newDistance >= minDistance && newDistance <= maxDistance) {
+          // Also check terrain height
+          const terrainHeight = sampleTerrainHeight(newPosition.x, newPosition.z);
+          const minHeightAboveTerrain = 0.3;
+          if (newPosition.y >= terrainHeight + minHeightAboveTerrain) {
+            camera.position.copy(newPosition);
+          }
+        }
+      }
+      
+      // Decay momentum
+      scrollVelocityRef.current *= momentumDecay;
+      if (Math.abs(scrollVelocityRef.current) < 0.01) {
+        scrollVelocityRef.current = 0;
+        targetDistanceRef.current = null;
+      } else {
+        // Update target distance based on remaining velocity
+        targetDistanceRef.current = currentDistance - scrollVelocityRef.current;
+        targetDistanceRef.current = Math.max(minDistance, Math.min(maxDistance, targetDistanceRef.current));
+      }
+    }
+    
     // Handle transition first
     if (isTransitioning && transitionStartTime && transitionStartPosition && transitionTargetPosition) {
       const transitionElapsed = Date.now() - transitionStartTime;
@@ -672,20 +695,35 @@ export function CinematicCameraController() {
       }
 
       case 'satellite': {
-        // Satellite movement: camera follows continuous orbital motion and always points down to beam base
+        // Satellite movement: camera follows satellite's orbital motion and always looks at the satellite model
         const SPHERE_RADIUS = 18; // Matches terrain diameter (~34.55 units side length)
-        const time = (Date.now() - sceneStartTime) / 1000; // Time in seconds
+        const SPHERE_CENTER = new Vector3(0, 0, 0);
         
-        // Continuous orbital angle (0 to 2π, then repeats)
-        const orbitalAngle = ((time * movement.speed) + (movement.phaseOffset || 0)) % (Math.PI * 2);
+        // Use frame-based time accumulation (same as Satellite component)
+        // Reset time when scene starts
+        if (sceneStartTime === null) {
+          sceneStartTime = Date.now();
+          movementStateRef.current.satelliteTime = movement.phaseOffset || 0;
+        }
+        
+        // Accumulate time using delta (frame-based, matches satellite component exactly)
+        // Satellite component: timeRef.current += delta * speed
+        movementStateRef.current.satelliteTime += delta * movement.speed;
+        // Keep time in reasonable range to avoid precision issues
+        if (movementStateRef.current.satelliteTime > Math.PI * 100) {
+          movementStateRef.current.satelliteTime = movementStateRef.current.satelliteTime % (Math.PI * 100);
+        }
+        
+        // Continuous orbital angle (0 to 2π, then repeats) - matches satellite calculation exactly
+        // Satellite component: const orbitalAngle = (timeRef.current + phaseOffset) % (Math.PI * 2);
+        const orbitalAngle = (movementStateRef.current.satelliteTime + (movement.phaseOffset || 0)) % (Math.PI * 2);
         
         // Orbital plane and inclination from movement config
         const orbitalPlane = movement.orbitalPlane || 0;
         const inclination = movement.inclination || 0;
         const radius = movement.radius || SPHERE_RADIUS;
         
-        // Calculate position on orbital plane
-        // The orbit is a circle that can be tilted (inclination) and rotated (orbitalPlane)
+        // Calculate satellite position on orbital plane (same calculation as Satellite component)
         const orbitX = Math.cos(orbitalAngle) * radius;
         const orbitY = Math.sin(orbitalAngle) * Math.sin(inclination) * radius;
         const orbitZ = Math.sin(orbitalAngle) * Math.cos(inclination) * radius;
@@ -696,36 +734,45 @@ export function CinematicCameraController() {
         
         // Apply rotation around Y axis
         const x = orbitX * cosPlane - orbitZ * sinPlane;
-        const y = orbitY; // Y doesn't change with Y-axis rotation
+        let y = orbitY; // Y doesn't change with Y-axis rotation
         const z = orbitX * sinPlane + orbitZ * cosPlane;
         
-        // Create position vector
-        const position = new Vector3(x, y, z);
+        // Create satellite position vector
+        const satellitePosition = new Vector3(x, y, z);
         
         // Ensure the point is exactly at the specified radius
-        position.normalize().multiplyScalar(radius);
+        satellitePosition.normalize().multiplyScalar(radius);
         
-        // Set camera position
-        camera.position.copy(position);
+        // Ensure orbit doesn't go below terrain (altitude 0+)
+        // Clamp Y to ensure it's always above terrain level (Y >= 0)
+        // For orbits that would go below, we'll adjust the Y to be at least 0
+        if (satellitePosition.y < 0) {
+          // Project the position onto the sphere at Y = 0 level
+          const horizontalRadius = Math.sqrt(satellitePosition.x * satellitePosition.x + satellitePosition.z * satellitePosition.z);
+          if (horizontalRadius > 0) {
+            const scale = radius / horizontalRadius;
+            satellitePosition.x *= scale;
+            satellitePosition.z *= scale;
+            satellitePosition.y = 0; // Set to terrain level
+          } else {
+            // If at center, position above
+            satellitePosition.set(0, radius, 0);
+          }
+        }
         
-        // Always point down to the light beam base
-        const beamBasePosition = new Vector3(
-          beamPosition.x,
-          beamPosition.y - beamHeight / 2,
-          beamPosition.z
-        );
+        // Calculate direction from satellite to center (satellite's forward direction)
+        const directionToCenter = SPHERE_CENTER.clone().sub(satellitePosition).normalize();
         
-        // Calculate direction to beam base
-        const directionToBeam = beamBasePosition.clone().sub(position).normalize();
-        const up = new Vector3(0, 1, 0);
+        // Position camera behind satellite (offset by 1.5 units - closer for better framing)
+        // This keeps the satellite in frame during orbital motion
+        const cameraOffset = directionToCenter.clone().multiplyScalar(-1.5);
+        const targetCameraPos = satellitePosition.clone().add(cameraOffset);
         
-        // Create rotation matrix to look at beam base
-        const lookAtMatrix = new Matrix4();
-        lookAtMatrix.lookAt(position, beamBasePosition, up);
-        const targetQuaternion = new Quaternion();
-        targetQuaternion.setFromRotationMatrix(lookAtMatrix);
+        // Set camera position to follow the orbital path behind the satellite
+        camera.position.copy(targetCameraPos);
         
-        camera.quaternion.copy(targetQuaternion);
+        // Always look at satellite to keep it in frame
+        camera.lookAt(satellitePosition);
         break;
       }
 
@@ -737,7 +784,7 @@ export function CinematicCameraController() {
     }
   });
 
-  // Reset when scene changes
+    // Reset when scene changes
   useEffect(() => {
     const unsubscribe = subscribeToSceneChange(() => {
       initialPositionRef.current = null;
@@ -748,7 +795,8 @@ export function CinematicCameraController() {
         dollyProgress: 0,
         trackingProgress: 0,
         staticDrift: { x: 0, y: 0, z: 0 },
-        pullBackProgress: 0
+        pullBackProgress: 0,
+        satelliteTime: 0
       };
     });
 

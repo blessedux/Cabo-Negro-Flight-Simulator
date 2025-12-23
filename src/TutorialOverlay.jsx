@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 export function TutorialOverlay() {
   const [isVisible, setIsVisible] = useState(false);
   const [hasSeenTutorial, setHasSeenTutorial] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
-    // Check if user has seen tutorial before
-    const seen = localStorage.getItem('hasSeenTutorial');
+    // Only show tutorial on /explore route
+    if (location.pathname !== '/explore') {
+      return;
+    }
+    
+    // Check if user has seen tutorial before (specifically for explore scene)
+    const seen = localStorage.getItem('hasSeenExploreTutorial');
     if (!seen) {
       // Show tutorial after a short delay
       const timer = setTimeout(() => {
@@ -16,12 +23,12 @@ export function TutorialOverlay() {
     } else {
       setHasSeenTutorial(true);
     }
-  }, []);
+  }, [location.pathname]);
 
   const handleClose = () => {
     setIsVisible(false);
     setHasSeenTutorial(true);
-    localStorage.setItem('hasSeenTutorial', 'true');
+    localStorage.setItem('hasSeenExploreTutorial', 'true');
   };
 
   if (hasSeenTutorial || !isVisible) {

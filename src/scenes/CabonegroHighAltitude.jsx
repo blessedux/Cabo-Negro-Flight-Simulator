@@ -2,7 +2,7 @@ import React from "react";
 import { PerspectiveCamera, Environment } from "@react-three/drei";
 import { EffectComposer, HueSaturation } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
-import { MountainRoadLandscape } from "../MountainRoadLandscape";
+import { MapboxTerrainTiles } from "../MapboxTerrainTiles";
 import { SphereEnv } from "../SphereEnv";
 import { Airplane } from "../Airplane";
 import { Targets } from "../Targets";
@@ -40,7 +40,7 @@ export function CabonegroHighAltitude({ textureRotation = 0 }) {
 
       <PerspectiveCamera makeDefault position={[0, 15, 12]} fov={60} />
 
-      <MountainRoadLandscape textureRotation={textureRotation} />
+      <MapboxTerrainTiles textureRotation={textureRotation} />
       <Airplane />
       <Targets />
       <LocationBeam />

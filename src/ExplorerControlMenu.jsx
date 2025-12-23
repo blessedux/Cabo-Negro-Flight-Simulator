@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { setOrbitSpeed } from './FreeCameraDragControls';
-import { setHeightExaggeration, getHeightExaggeration } from './terrainHeightUtils';
-import { AdvancedTerrainControls } from './AdvancedTerrainControls';
+import { getTileDebugEnabled, setTileDebugEnabled } from './TileDebugToggle';
 
 export function ExplorerControlMenu() {
   const navigate = useNavigate();
@@ -11,19 +9,34 @@ export function ExplorerControlMenu() {
     // Navigate to flight scene
     navigate('/flight');
   };
-  const [orbitSpeed, setOrbitSpeedValue] = useState(0.3); // Default 30% speed (0.15 / 0.5)
-  const [heightExaggeration, setHeightExaggerationValue] = useState(getHeightExaggeration()); // Default 1.0
+  
+  const [tileDebugEnabled, setTileDebugEnabledValue] = useState(getTileDebugEnabled());
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Sync with global state
   useEffect(() => {
-    // Update orbit speed when slider changes
-    setOrbitSpeed(orbitSpeed);
-  }, [orbitSpeed]);
+    const handleToggle = (event) => {
+      setTileDebugEnabledValue(event.detail.enabled);
+    };
+    window.addEventListener('tileDebugToggle', handleToggle);
+    // Check initial state
+    setTileDebugEnabledValue(getTileDebugEnabled());
+    return () => window.removeEventListener('tileDebugToggle', handleToggle);
+  }, []);
 
-  useEffect(() => {
-    // Update height exaggeration when slider changes
-    setHeightExaggeration(heightExaggeration);
-  }, [heightExaggeration]);
+  const handleTileDebugToggle = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newValue = !tileDebugEnabled;
+    console.log('🔄 ExplorerControlMenu: Toggling wireframe:', { 
+      currentValue: tileDebugEnabled, 
+      newValue,
+      buttonClicked: true 
+    });
+    setTileDebugEnabledValue(newValue);
+    setTileDebugEnabled(newValue);
+    console.log('✅ ExplorerControlMenu: setTileDebugEnabled called with:', newValue);
+  };
 
   return (
     <div
@@ -53,93 +66,47 @@ export function ExplorerControlMenu() {
             gap: '20px',
           }}
         >
-          {/* Orbit Speed Control */}
+          {/* Wireframe Toggle */}
           <div
             style={{
               display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '8px 0',
             }}
           >
-            <label
+            <span style={{ color: '#ffffff', fontSize: '14px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+              Wireframe + Tags
+            </span>
+            <button
+              type="button"
+              onClick={handleTileDebugToggle}
+              onMouseDown={(e) => e.stopPropagation()}
               style={{
-                color: '#ffffff',
-                fontSize: '14px',
-                fontWeight: '500',
-                fontFamily: 'system-ui, -apple-system, sans-serif',
-              }}
-            >
-              Orbit Speed: {Math.round(orbitSpeed * 100)}%
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={orbitSpeed}
-              onChange={(e) => setOrbitSpeedValue(parseFloat(e.target.value))}
-              style={{
-                width: '100%',
-                height: '6px',
-                borderRadius: '3px',
-                background: 'rgba(255, 255, 255, 0.2)',
-                outline: 'none',
+                width: '50px',
+                height: '26px',
+                borderRadius: '13px',
+                border: 'none',
+                backgroundColor: tileDebugEnabled ? 'rgba(100, 150, 255, 0.8)' : 'rgba(100, 100, 100, 0.5)',
                 cursor: 'pointer',
-              }}
-            />
-          </div>
-
-          {/* Height Exaggeration Control */}
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-            }}
-          >
-            <label
-              style={{
-                color: '#ffffff',
-                fontSize: '14px',
-                fontWeight: '500',
-                fontFamily: 'system-ui, -apple-system, sans-serif',
+                position: 'relative',
+                transition: 'all 0.2s',
+                padding: '2px',
               }}
             >
-              Height Exaggeration: {heightExaggeration.toFixed(1)}x
-            </label>
-            <input
-              type="range"
-              min="0.1"
-              max="10"
-              step="0.1"
-              value={heightExaggeration}
-              onChange={(e) => setHeightExaggerationValue(parseFloat(e.target.value))}
-              style={{
-                width: '100%',
-                height: '6px',
-                borderRadius: '3px',
-                background: 'rgba(255, 255, 255, 0.2)',
-                outline: 'none',
-                cursor: 'pointer',
-              }}
-            />
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: '11px',
-                color: 'rgba(255, 255, 255, 0.6)',
-                fontFamily: 'system-ui, -apple-system, sans-serif',
-              }}
-            >
-              <span>0.1x</span>
-              <span>5.0x</span>
-              <span>10x</span>
-            </div>
+              <div
+                style={{
+                  width: '22px',
+                  height: '22px',
+                  borderRadius: '50%',
+                  backgroundColor: '#fff',
+                  transform: tileDebugEnabled ? 'translateX(24px)' : 'translateX(0)',
+                  transition: 'transform 0.2s',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+                }}
+              />
+            </button>
           </div>
-
-          {/* Advanced Terrain Controls */}
-          <AdvancedTerrainControls />
 
           {/* Flight Scene Button */}
           <button

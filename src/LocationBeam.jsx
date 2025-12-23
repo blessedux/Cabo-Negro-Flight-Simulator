@@ -2,35 +2,19 @@ import React, { useMemo, useEffect, useState } from 'react';
 import { CylinderGeometry, ShaderMaterial } from 'three';
 import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
-
 import { Vector3 } from 'three';
+import { latLngToTile, tileToLatLngCenter, metersPerTile } from './utils/tileCoordinates';
 
 // Export beam position for collision detection
 export let beamPosition = new Vector3();
-export let beamRadius = 0.03;
+export let beamRadius = 0.05; // Beam radius (half of 0.1)
 export let beamHeight = 50;
 
 export function LocationBeam() {
-  // Target location based on tile 13_2483_5521
-  // Position: approximately 45.94 meters north of the terrain center
-  
-  // Terrain settings from MountainRoadLandscape
-  const textureCoverageMeters = 3455; // 3.455 km
-  const sceneScale = 0.01; // Scene scale factor
-  
-  // Position relative to terrain center
-  // Each tile is ~11.48 meters
-  // Moving 10 more tiles north and 1 tile west from current position
-  const tilesNorth = 6; // Additional 6 tiles north
-  const additionalTilesNorth = 10; // Additional 10 tiles north
-  const tilesWest = 1; // 1 tile west
-  const offsetNorthMeters = 45.94 - (12 * 11.48) + (6 * 11.48) + (10 * 11.48) + (tilesNorth * 11.48) + (6 * 11.48) - (additionalTilesNorth * 28.48); // Subtract to move north (north is negative in this coordinate system)
-  const offsetEastMeters = -tilesWest * 6.48; // West is negative (1 tile west)
-  
-  // Convert to scene coordinates
-  // North is negative Z, so we negate the north offset
-  const sceneX = offsetEastMeters * sceneScale;
-  const sceneZ = -offsetNorthMeters * sceneScale; // Negative because north = negative Z
+  // Position beam at origin [0, 0, 0] - correct position
+  const sceneX = 0;
+  const sceneZ = 0;
+  const sceneY = 0;
   
   // Heightmap removed - using flat terrain
   const [terrainHeight, setTerrainHeight] = useState(0);
@@ -39,23 +23,16 @@ export function LocationBeam() {
   useEffect(() => {
     // Use flat terrain (heightmap removed)
     setTerrainHeight(0);
-  }, [offsetNorthMeters, offsetEastMeters]);
+  }, [sceneX, sceneZ]);
   
   // Use terrain height for beam base position
-  const sceneY = terrainHeight;
+  const finalSceneY = terrainHeight;
   
-  // Debug: log the position
-  console.log('LocationBeam position:', {
-    sceneX: sceneX.toFixed(4),
-    sceneY: sceneY.toFixed(4),
-    sceneZ: sceneZ.toFixed(4),
-    offsetNorthMeters: offsetNorthMeters,
-    sceneScale: sceneScale
-  });
+  // Position calculated (removed verbose logging)
   
-  // Beam properties - make it thin
+  // Beam properties - make it visible
   beamHeight = 50; // Height of the beam in scene units
-  beamRadius = 0.03; // Thin beam (1/10th of previous 0.3)
+  beamRadius = 0.05; // Half the previous size (0.1 / 2 = 0.05)
   const segments = 32; // Number of segments for smooth cylinder
   
   // Create geometry
@@ -68,7 +45,7 @@ export function LocationBeam() {
     const halfHeight = beamHeight / 2.0;
     return new ShaderMaterial({
       uniforms: {
-        color: { value: new THREE.Color(0x00ffff) }, // Cyan blue
+        color: { value: new THREE.Color(0x00ffff) }, // Cyan blue - bright cyan
         halfHeight: { value: halfHeight }, // Half height for shader calculation
       },
       vertexShader: `
@@ -88,38 +65,37 @@ export function LocationBeam() {
           // Cylinder is centered at origin, so Y ranges from -halfHeight to +halfHeight
           float normalizedY = (vPosition.y + halfHeight) / (halfHeight * 2.0);
           
-          // Create gradient: 50% at bottom, 100% in middle, fade at top
+          // Create gradient: brighter at bottom, full brightness in middle, fade at top
           // Use smooth curves for transitions
           float opacity;
-          if (normalizedY < 0.5) {
-            // Bottom half: fade from 0.5 to 1.0
-            float t = normalizedY * 2.0; // 0 to 1 in bottom half
-            opacity = mix(0.5, 1.0, smoothstep(0.0, 1.0, t));
+          if (normalizedY < 0.3) {
+            // Bottom 30%: fade from 0.8 to 1.0 for better visibility
+            float t = normalizedY / 0.3; // 0 to 1 in bottom 30%
+            opacity = mix(0.8, 1.0, smoothstep(0.0, 1.0, t));
+          } else if (normalizedY < 0.7) {
+            // Middle 40%: full opacity
+            opacity = 1.0;
           } else {
-            // Top half: fade from 1.0 to 0.0, with faster fade at very top
-            float t = (normalizedY - 0.5) * 2.0; // 0 to 1 in top half
-            // Use smoothstep for smooth fade, with more fade at the end
-            float fadeStart = 0.7; // Start fading more aggressively after 70% of top half
-            if (t < fadeStart) {
-              opacity = 1.0;
-            } else {
-              float fadeT = (t - fadeStart) / (1.0 - fadeStart);
-              opacity = 1.0 - smoothstep(0.0, 1.0, fadeT);
-            }
+            // Top 30%: fade from 1.0 to 0.0
+            float t = (normalizedY - 0.7) / 0.3; // 0 to 1 in top 30%
+            opacity = 1.0 - smoothstep(0.0, 1.0, t);
           }
           
-          gl_FragColor = vec4(color, opacity);
+          // Make color much brighter and more visible
+          vec3 brightColor = color * 3.0; // Increase brightness significantly
+          gl_FragColor = vec4(brightColor, opacity);
         }
       `,
       transparent: true,
       side: THREE.DoubleSide,
       depthWrite: false, // Allow objects behind to show through
+      depthTest: true, // Enable depth testing for proper rendering
     });
   }, [beamHeight]);
   
   // Position beam so bottom is at terrain height
   // Cylinder is centered, so we need to offset by half height
-  const beamY = sceneY + beamHeight / 2;
+  const beamY = finalSceneY + beamHeight / 2;
   
   // Update exported beam position for collision detection
   beamPosition.set(sceneX, beamY, sceneZ);
