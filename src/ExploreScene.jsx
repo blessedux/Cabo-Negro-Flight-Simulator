@@ -113,7 +113,6 @@ export function ExploreScene() {
     <>
       <TutorialOverlay />
       <Navbar />
-      <ExplorerControlMenu />
       <ModelPositionEditor />
       
       {/* Scene Navigator - fade out in free mode */}
